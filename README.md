@@ -1,16 +1,18 @@
-# gastos_gerais_app_flutter
+# Gastos Gerais
 
-A new Flutter project.
+### ✨ Sobre
+Versão Mobile (Android) da aplicação [Gastos Gerais](https://github.com/rafaelcastrobr/gastos/)
 
-## Getting Started
+Em desenvolvimento!!
 
-This project is a starting point for a Flutter application.
+## 🔨 Ferramentas
+- Flutter {useContext, useReducer}
+- hydrated_bloc 
 
-A few resources to get you started if this is your first Flutter project:
+---
+## 🥰 Preview
+ Imagem a aplicação Gastos versão web;
+![img](src/assets/img/code.png)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## ❤️ Agradecimento
+Para minha namorada Andressa que precisava de algo assim então tive a ideia de produzir um programinha para tal tarefa.
