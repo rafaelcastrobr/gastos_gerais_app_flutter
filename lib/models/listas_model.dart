@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:core';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter_guid/flutter_guid.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable()
@@ -37,14 +38,15 @@ class ListasModel extends Equatable {
 
   factory ListasModel.fromMap(Map<String, dynamic> map) {
     return ListasModel(
-      id: map['id'] as String,
-      titulo: map['titulo'] as String,
-      valor: map['valor'] as int,
-      iconEnum: map['iconEnum'] as int,
+      id: map['id'] ?? Guid.generate(),
+      titulo: map['titulo'] ?? '',
+      valor: map['valor'] ?? 0,
+      iconEnum: map['iconEnum'] ?? 0,
     );
   }
 
   String toJson() => json.encode(toMap());
 
   factory ListasModel.fromJson(String source) => ListasModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  
 }

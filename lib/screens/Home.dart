@@ -14,17 +14,17 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final TextEditingController _controllerTitulo = TextEditingController();
   final TextEditingController _controllerValor = TextEditingController();
-  late final CreateListCubit createListCubit;
 
   @override
   void initState() {
     // TODO: implement initState
-    createListCubit = CreateListCubit();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+        final createListCubit = context.read<CreateListCubit>();
+
     return SafeArea(
       child: GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
@@ -44,7 +44,7 @@ class _HomeState extends State<Home> {
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                       onPressed: () {
                         Guid id = Guid.generate();
-                        createListCubit.addTaskMesAtual(id.toString(), _controllerTitulo.text, int.parse(_controllerValor.text));
+                        createListCubit.addTaskMesAtual(id.value, _controllerTitulo.text, int.parse(_controllerValor.text));
                       },
                       child: const Icon(Icons.add),
                     ),
@@ -52,12 +52,23 @@ class _HomeState extends State<Home> {
                   BlocBuilder<CreateListCubit, CreateListState>(
                     bloc: createListCubit,
                     builder: (context, state) {
+                      final listaMesAtual = state.mesAtual ?? [];
+                      
                       return ListView.builder(
                         shrinkWrap: true,
-                        itemCount: state.mesAtual?.length,
+                        itemCount: listaMesAtual.length,
                         itemBuilder: (context, index) {
-                          Container(
-                            child: Text('${state.mesAtual![index].titulo}'),
+                          return Row(
+                            children: [
+                              Text(listaMesAtual[index].titulo),
+                              const SizedBox(width: 10),
+                              Text('${listaMesAtual[index].valor}'),
+                              IconButton(onPressed: (){
+                              createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
+                  
+                  
+                              }, icon:const Icon(Icons.delete, color: Colors.red))
+                            ],
                           );
                         },
                       );

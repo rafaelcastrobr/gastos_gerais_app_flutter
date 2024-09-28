@@ -33,21 +33,24 @@ const CreateListState({this.mesAtual, this.proxMes, this.outros});
   }
 
   factory CreateListState.fromMap(Map<String, dynamic> map) {
-    final List<ListasModel> mesAtual = (jsonDecode(map['mesAtual']) as List)
-        .map((task) => ListasModel.fromJson(task))
-        .toList();
-     final List<ListasModel> outros = (jsonDecode(map['outros']) as List)
-        .map((task) => ListasModel.fromJson(task))
-        .toList();
-      final List<ListasModel> proxMes = (jsonDecode(map['proxMes']) as List)
-        .map((task) => ListasModel.fromJson(task))
-        .toList();   
-    return CreateListState(
-      mesAtual: mesAtual,
-      outros: outros,
-      proxMes: proxMes,
-    );
-  }
+  
+  final List<ListasModel> mesAtual = (map['mesAtual'] == null ? [] : jsonDecode(map['mesAtual']))
+      .map((task) => ListasModel.fromJson(task))
+      .toList();
+  // final List<ListasModel> proxMes = (map['proxMes'] == null ? [] : jsonDecode(map['proxMes']))
+  //     .map((task) => ListasModel.fromJson(task))
+  //     .toList();
+  // final List<ListasModel> outros = (map['outros'] == null ? [] : jsonDecode(map['outros']))
+  //     .map((task) => ListasModel.fromJson(task))
+  //     .toList();
+
+  return CreateListState(
+    mesAtual: mesAtual,
+    outros: [],
+    proxMes: [],
+  );
+}
+
 
   @override
   List<Object?> get props => [mesAtual, proxMes, outros];

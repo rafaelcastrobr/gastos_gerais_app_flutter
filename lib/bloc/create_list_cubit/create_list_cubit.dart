@@ -8,7 +8,7 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 part 'create_list_state.dart';
 
-class CreateListCubit extends Cubit<CreateListState> {
+class CreateListCubit extends HydratedCubit<CreateListState> {
   CreateListCubit() : super(CreateListInitial());
 
   void addTaskMesAtual(String id, String text, int value) {
