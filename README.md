@@ -6,7 +6,7 @@ Versão Mobile (Android) da aplicação [Gastos Gerais](https://github.com/rafae
 Em desenvolvimento!!
 
 ## 🔨 Ferramentas
-- Flutter {useContext, useReducer}
+- Flutter (v.3.24.3)
 - hydrated_bloc 
 
 ---
