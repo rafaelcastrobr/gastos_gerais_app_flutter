@@ -4,7 +4,6 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
-import 'package:meta/meta.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

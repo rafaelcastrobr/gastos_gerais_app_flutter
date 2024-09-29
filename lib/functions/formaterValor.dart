@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class Formatervalor {
@@ -10,19 +11,28 @@ class Formatervalor {
   }
 
   static double limparString(String valor, bool entrada, bool saida) {
-    String valorFormatado = valor;
-    String valorSemPontos = valorFormatado.replaceAll('.', '');
-    String valorComPonto = valorSemPontos.replaceAll(',', '.');
-    double valorNumerico = double.parse(valorComPonto);
-    double valorEntradaSaida = 0;
+    String valorFormatado = valor.trim();
+    String valorComPonto = valorFormatado.replaceAll(',', '.');
+    double valorNumerico = valorComPonto.isEmpty ? 0.0 : double.parse(valorComPonto);
+    double valorEntradaSaida = 0.0;
 
     if (entrada) {
-      valorEntradaSaida = valorNumerico;
+      valorEntradaSaida =valorComPonto.contains('-') ? valorNumerico.abs() : valorNumerico;
     }
     if (saida) {
       valorEntradaSaida = -valorNumerico;
     }
 
+    if (!saida && !entrada) {
+      valorEntradaSaida = valorNumerico;
+    }
+
     return valorEntradaSaida;
+  }
+
+  static Color verificaSeENegativo(String valor) {
+    bool valorDouble = valor.contains('-');
+
+    return valorDouble ? Colors.red : Colors.blue;
   }
 }

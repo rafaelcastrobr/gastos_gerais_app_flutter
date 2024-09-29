@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
+import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 
 class OutrosWidgets extends StatefulWidget {
   const OutrosWidgets({super.key});
@@ -19,18 +20,20 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
       builder: (context, state) {
         final listaOutros = state.outros ?? [];
 
-        var total = listaOutros.fold(0.0, (previousValue, element) => previousValue + element.valor);
+        var total = Formatervalor.formaterForReal(listaOutros.fold(0.0, (previousValue, element) => previousValue + element.valor));
 
         return Column(
           children: [
-            Align(alignment: Alignment.centerLeft, child: Text('Outros', style: TextStyle(fontSize: 30, color: Colors.green[400]))),
-            Divider(),
-            if (listaOutros.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 15)),
+            const Align(alignment: Alignment.centerLeft, child: Text('Outros', style: TextStyle(fontSize: 30, color: Colors.grey))),
+            const Divider(),
+            if (listaOutros.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 20)),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: listaOutros.length,
               itemBuilder: (context, index) {
+                String valor = Formatervalor.formaterForReal(listaOutros[index].valor);
+
                 return Row(
                   children: [
                     IconButton(
@@ -40,15 +43,31 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
                         onPressed: () {
-                          //createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
+                          TextEditingController contText = TextEditingController();
+                          TextEditingController contValor = TextEditingController();
+                          contText.text = listaOutros[index].titulo;
+                          contValor.text = listaOutros[index].valor.toString();
+
+                          createListCubit.initControllerText(contText, contValor);
                         },
                         icon: const Icon(Icons.copy, color: Colors.blue)),
                     IconButton(
                         onPressed: () {
-                          //createListCubit.editTaskMesAtual(listaMesAtual[index].id);
+                          TextEditingController contText = TextEditingController();
+                          TextEditingController contValor = TextEditingController();
+                          contText.text = listaOutros[index].titulo;
+                          contValor.text = listaOutros[index].valor.toString();
+
+                          createListCubit.initControllerText(contText, contValor);
+                          createListCubit.deleteTaskMesAtual(listaOutros[index].id);
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
-                    Text('${listaOutros[index].titulo.toUpperCase()} * ${listaOutros[index].valor}', style: TextStyle(fontSize: 25)),
+                    Row(
+                      children: [
+                        Text('${listaOutros[index].titulo.toUpperCase()} * ', style: const TextStyle(fontSize: 20)),
+                        Text(valor, style: TextStyle(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
+                      ],
+                    ),
                   ],
                 );
               },
@@ -59,11 +78,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                 text: 'TOTAL: ',
                 style: const TextStyle(fontSize: 20, color: Colors.black),
                 children: <TextSpan>[
-                  TextSpan(
-                      text: '$total',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      )),
+                  TextSpan(text: total, style: TextStyle(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
                 ],
               ),
             ),

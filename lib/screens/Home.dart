@@ -23,6 +23,7 @@ class _HomeState extends State<Home> {
   late final TextEditingController _controllerTitulo;
   late final TextEditingController _controllerValor;
   late final CreateListCubit createListCubit;
+  final ValueNotifier valueNotifier = ValueNotifier("");
 
   bool mesAtualCheck = false;
   bool proxMesCheck = false;
@@ -32,6 +33,7 @@ class _HomeState extends State<Home> {
   bool saidaCheck = false;
 
   bool error = false;
+  String errorText = '';
 
   @override
   void initState() {
@@ -46,7 +48,27 @@ class _HomeState extends State<Home> {
     super.initState();
   }
 
-  listShared() async {
+  bool validarEntrada() {
+    var valorNumerico = Formatervalor.limparString(createListCubit.state.controllerValor!.text, entradaCheck, saidaCheck);
+
+    if (createListCubit.state.controllerTitulo!.text.isEmpty) {
+      valueNotifier.value = 'Título não pode ficar vazio';
+      return false;
+    } else if (valorNumerico == 0) {
+      valueNotifier.value = 'Valor não pode ficar vazio';
+      return false;
+    } else if (!entradaCheck && !saidaCheck) {
+      valueNotifier.value = 'É preciso dizer se é entrada ou saída';
+      return false;
+    } else if (!mesAtualCheck && !proxMesCheck && !outrosCheck) {
+      valueNotifier.value = 'É preciso dizer para qual lista deve ir';
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  void listShared() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // prefs.remove('mesAtual');
@@ -66,7 +88,7 @@ class _HomeState extends State<Home> {
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
         child: Scaffold(
           body: Padding(
-            padding: const EdgeInsets.all(25),
+            padding: const EdgeInsets.all(15),
             child: SingleChildScrollView(
               child: BlocBuilder<CreateListCubit, CreateListState>(
                 bloc: createListCubit,
@@ -80,7 +102,7 @@ class _HomeState extends State<Home> {
                       Row(children: [
                         const Text('ENTRADA'),
                         Checkbox(
-                          value: mesAtualCheck,
+                          value: entradaCheck,
                           onChanged: (value) {
                             setState(() {
                               entradaCheck = !entradaCheck;
@@ -90,7 +112,7 @@ class _HomeState extends State<Home> {
                         ),
                         const Text('SAÍDA'),
                         Checkbox(
-                          value: proxMesCheck,
+                          value: saidaCheck,
                           onChanged: (value) {
                             setState(() {
                               saidaCheck = !saidaCheck;
@@ -102,7 +124,7 @@ class _HomeState extends State<Home> {
                       Row(children: [
                         const Text('MÊS ATUAL'),
                         Checkbox(
-                          value: entradaCheck,
+                          value: mesAtualCheck,
                           onChanged: (value) {
                             setState(() {
                               mesAtualCheck = !mesAtualCheck;
@@ -113,7 +135,7 @@ class _HomeState extends State<Home> {
                         ),
                         const Text('PROX. MÊS'),
                         Checkbox(
-                          value: saidaCheck,
+                          value: proxMesCheck,
                           onChanged: (value) {
                             setState(() {
                               mesAtualCheck = false;
@@ -134,26 +156,53 @@ class _HomeState extends State<Home> {
                           },
                         ),
                       ]),
+                      if (error)
+                        ValueListenableBuilder(
+                          valueListenable: valueNotifier,
+                          builder: (context, value, child) {
+                            return Text(
+                              '$value',
+                              style: const TextStyle(fontSize: 15, color: Colors.red),
+                            );
+                          },
+                        ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(0, 15, 0, 0),
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
                           onPressed: () {
+                            if (!validarEntrada()) {
+                              setState(() => error = true);
+                              return;
+                            } else {
+                              setState(() => error = false);
+                            }
+
+                            var valorNumerico = Formatervalor.limparString(state.controllerValor!.text, entradaCheck, saidaCheck);
+
                             Guid id = Guid.generate();
 
-                            var valorNumerico = Formatervalor.limparString(_controllerValor.text, entradaCheck, saidaCheck);
-
                             if (mesAtualCheck) {
-                              createListCubit.addTaskMesAtual(id.value, _controllerTitulo.text, valorNumerico);
+                              createListCubit.addTaskMesAtual(id.value, state.controllerTitulo!.text, valorNumerico);
                             }
 
                             if (proxMesCheck) {
-                              createListCubit.addTaskProxMes(id.value, _controllerTitulo.text, valorNumerico);
+                              createListCubit.addTaskProxMes(id.value, state.controllerTitulo!.text, valorNumerico);
                             }
 
                             if (outrosCheck) {
-                              createListCubit.addTaskOutros(id.value, _controllerTitulo.text, valorNumerico);
+                              createListCubit.addTaskOutros(id.value, state.controllerTitulo!.text, valorNumerico);
                             }
+
+                            state.controllerTitulo!.clear();
+                            state.controllerValor!.clear();
+                            setState(() {
+                              entradaCheck = false;
+                              saidaCheck = false;
+                              mesAtualCheck = false;
+                              proxMesCheck = false;
+                              outrosCheck = false;
+                            });
                           },
                           child: const Icon(Icons.add),
                         ),
@@ -164,6 +213,7 @@ class _HomeState extends State<Home> {
                       const ProxMesWidget(),
                       const SizedBox(height: 20),
                       const OutrosWidgets(),
+                      const SizedBox(height: 20)
                     ],
                   );
                 },

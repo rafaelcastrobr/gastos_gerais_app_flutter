@@ -21,6 +21,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      style: const TextStyle(fontSize: 20),
       controller: widget.controller,
       keyboardType: widget.typeInput,
       inputFormatters: widget.isValor ? [CurrencyInputFormatter()] : [],

@@ -1,10 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/screens/Home.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 
 Future<void> main() async {
   runApp(const MyApp());

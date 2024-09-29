@@ -19,19 +19,19 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
       bloc: createListCubit,
       builder: (context, state) {
         final listaMesAtual = state.mesAtual ?? [];
-
-        var total = listaMesAtual.fold(0.0, (previousValue, element) => previousValue + element.valor);
+        var total = Formatervalor.formaterForReal(listaMesAtual.fold(0.0, (previousValue, element) => previousValue + element.valor));
 
         return Column(
           children: [
-            Align(alignment: Alignment.centerLeft, child: Text('Mês Atual', style: TextStyle(fontSize: 30, color: Colors.green[400]))),
-            Divider(),
+            const Align(alignment: Alignment.centerLeft, child: Text('Mês Atual', style: TextStyle(fontSize: 30, color: Colors.grey))),
+            const Divider(),
             if (listaMesAtual.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 20)),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: listaMesAtual.length,
               itemBuilder: (context, index) {
+                String valor = Formatervalor.formaterForReal(listaMesAtual[index].valor);
                 return Row(
                   children: [
                     IconButton(
@@ -41,37 +41,44 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
                         onPressed: () {
-                          //createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
+                          TextEditingController contText = TextEditingController();
+                          TextEditingController contValor = TextEditingController();
+                          contText.text = listaMesAtual[index].titulo;
+                          contValor.text = listaMesAtual[index].valor.toString();
+
+                          createListCubit.initControllerText(contText, contValor);
                         },
                         icon: const Icon(Icons.copy, color: Colors.blue)),
                     IconButton(
                         onPressed: () {
-                          //createListCubit.editTaskMesAtual(listaMesAtual[index].id);
+                          TextEditingController contText = TextEditingController();
+                          TextEditingController contValor = TextEditingController();
+                          contText.text = listaMesAtual[index].titulo;
+                          contValor.text = listaMesAtual[index].valor.toString();
+
+                          createListCubit.initControllerText(contText, contValor);
+                          createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
-                    Text('${listaMesAtual[index].titulo.toUpperCase()} * ${Formatervalor.formaterForReal(listaMesAtual[index].valor)}', style: TextStyle(fontSize: 25)),
+                    Row(
+                      children: [
+                        Text('${listaMesAtual[index].titulo.toUpperCase()} * ', style: const TextStyle(fontSize: 20)),
+                        Text(valor, style: TextStyle(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
+                      ],
+                    ),
                   ],
                 );
               },
             ),
             const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    text: 'TOTAL: ',
-                    style: const TextStyle(fontSize: 20, color: Colors.black),
-                    children: <TextSpan>[
-                      TextSpan(
-                          text: Formatervalor.formaterForReal(total),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          )),
-                    ],
-                  ),
-                ),
-              ],
+            RichText(
+              text: TextSpan(
+                text: 'TOTAL: ',
+                style: const TextStyle(fontSize: 20, color: Colors.black),
+                children: <TextSpan>[
+                  TextSpan(text: total, style: TextStyle(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                ],
+              ),
             ),
           ],
         );

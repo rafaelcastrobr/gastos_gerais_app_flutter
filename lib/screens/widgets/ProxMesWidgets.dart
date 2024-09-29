@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
+import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 
 class ProxMesWidget extends StatefulWidget {
   const ProxMesWidget({super.key});
@@ -19,18 +20,20 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
       builder: (context, state) {
         final listaProxMes = state.proxMes ?? [];
 
-        var total = listaProxMes.fold(0.0, (previousValue, element) => previousValue + element.valor);
+        var total = Formatervalor.formaterForReal(listaProxMes.fold(0.0, (previousValue, element) => previousValue + element.valor));
 
         return Column(
           children: [
-            Align(alignment: Alignment.centerLeft, child: Text('Próx Mês', style: TextStyle(fontSize: 30, color: Colors.green[400]))),
-            Divider(),
-            if (listaProxMes.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 15)),
+            const Align(alignment: Alignment.centerLeft, child: Text('PRÓ. MÊS', style: TextStyle(fontSize: 30, color: Colors.grey))),
+            const Divider(),
+            if (listaProxMes.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 20)),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: listaProxMes.length,
               itemBuilder: (context, index) {
+                String valor = Formatervalor.formaterForReal(listaProxMes[index].valor);
+
                 return Row(
                   children: [
                     IconButton(
@@ -40,15 +43,31 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
                         onPressed: () {
-                          //createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
+                          TextEditingController contText = TextEditingController();
+                          TextEditingController contValor = TextEditingController();
+                          contText.text = listaProxMes[index].titulo;
+                          contValor.text = listaProxMes[index].valor.toString();
+
+                          createListCubit.initControllerText(contText, contValor);
                         },
                         icon: const Icon(Icons.copy, color: Colors.blue)),
                     IconButton(
                         onPressed: () {
-                          //createListCubit.editTaskMesAtual(listaMesAtual[index].id);
+                          TextEditingController contText = TextEditingController();
+                          TextEditingController contValor = TextEditingController();
+                          contText.text = listaProxMes[index].titulo;
+                          contValor.text = listaProxMes[index].valor.toString();
+
+                          createListCubit.initControllerText(contText, contValor);
+                          createListCubit.deleteTaskProxMes(listaProxMes[index].id);
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
-                    Text('${listaProxMes[index].titulo.toUpperCase()} * ${listaProxMes[index].valor}', style: TextStyle(fontSize: 25)),
+                    Row(
+                      children: [
+                        Text('${listaProxMes[index].titulo.toUpperCase()} * ', style: const TextStyle(fontSize: 20)),
+                        Text(valor, style: TextStyle(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
+                      ],
+                    ),
                   ],
                 );
               },
@@ -59,11 +78,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                 text: 'TOTAL: ',
                 style: const TextStyle(fontSize: 20, color: Colors.black),
                 children: <TextSpan>[
-                  TextSpan(
-                      text: '$total',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      )),
+                  TextSpan(text: total, style: TextStyle(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
                 ],
               ),
             ),
