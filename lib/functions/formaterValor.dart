@@ -10,14 +10,48 @@ class Formatervalor {
     return valorFormatado;
   }
 
-  static double limparString(String valor, bool entrada, bool saida) {
+  static double limparString2(String valor, bool entrada, bool saida) {
     String valorFormatado = valor.trim();
     String valorComPonto = valorFormatado.replaceAll(',', '.');
+
+    // Remove todos os pontos, exceto o último
+    int lastDotIndex = valorComPonto.lastIndexOf('.');
+    if (lastDotIndex != -1) {
+      valorComPonto = valorComPonto.replaceAll('.', '');
+      valorComPonto = valorComPonto.substring(0, lastDotIndex) + '.' + valorComPonto.substring(lastDotIndex);
+    }
+
     double valorNumerico = valorComPonto.isEmpty ? 0.0 : double.parse(valorComPonto);
     double valorEntradaSaida = 0.0;
 
     if (entrada) {
-      valorEntradaSaida =valorComPonto.contains('-') ? valorNumerico.abs() : valorNumerico;
+      valorEntradaSaida = valorComPonto.contains('-') ? valorNumerico.abs() : valorNumerico;
+    }
+    if (saida) {
+      valorEntradaSaida = -valorNumerico;
+    }
+
+    if (!saida && !entrada) {
+      valorEntradaSaida = valorNumerico;
+    }
+
+    return valorEntradaSaida;
+  }
+
+  static double limparString(String valor, bool entrada, bool saida) {
+    String valorFormatado = valor.trim();
+    String valorComPonto = valorFormatado.replaceAll(',', '.');
+
+    int lastDotIndex = valorComPonto.lastIndexOf('.');
+    if (lastDotIndex != -1) {
+      valorComPonto = valorComPonto.substring(0, lastDotIndex).replaceAll('.', '') + valorComPonto.substring(lastDotIndex);
+    }
+
+    double valorNumerico = valorComPonto.isEmpty ? 0.0 : double.parse(valorComPonto);
+    double valorEntradaSaida = 0.0;
+
+    if (entrada) {
+      valorEntradaSaida = valorComPonto.contains('-') ? valorNumerico.abs() : valorNumerico;
     }
     if (saida) {
       valorEntradaSaida = -valorNumerico;

@@ -1,11 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
-import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/MesAtualWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/OutrosWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ProxMesWidgets.dart';
@@ -193,7 +190,7 @@ class _HomeState extends State<Home> {
                             if (outrosCheck) {
                               createListCubit.addTaskOutros(id.value, state.controllerTitulo!.text, valorNumerico);
                             }
-
+                            FocusScope.of(context).requestFocus(FocusNode());
                             state.controllerTitulo!.clear();
                             state.controllerValor!.clear();
                             setState(() {

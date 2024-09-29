@@ -1,10 +1,5 @@
-import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gastos_gerais_app_flutter/utils/formtaterTexts.dart';
-import 'package:intl/intl.dart';
 
 class TextInputWidget extends StatefulWidget {
   final TextEditingController controller;
