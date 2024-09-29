@@ -111,7 +111,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     emit(outros);
   }
 
-  void deleteTaskMesAtual(String id) async {
+   deleteTaskMesAtual(String id) async {
     var newListMesAtual = [...?state.mesAtual];
 
     var listaAtualizada = newListMesAtual

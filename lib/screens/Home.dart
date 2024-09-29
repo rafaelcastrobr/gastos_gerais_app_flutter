@@ -7,6 +7,7 @@ import 'package:gastos_gerais_app_flutter/screens/widgets/MesAtualWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/OutrosWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ProxMesWidgets.dart';
 import 'package:gastos_gerais_app_flutter/widgets/TextInputWidget.dart';
+import 'package:gastos_gerais_app_flutter/widgets/VersionWidget.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -97,6 +98,7 @@ class _HomeState extends State<Home> {
                     children: [
                       const Icon(Icons.account_balance, color: Colors.black),
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
+                      const VersionWidget(),
                       Row(children: [
                         TextInputWidget(controller: state.controllerTitulo ?? _controllerTitulo, largura: 200, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
                         const SizedBox(width: 40),
@@ -217,7 +219,7 @@ class _HomeState extends State<Home> {
                       const ProxMesWidget(),
                       const SizedBox(height: 20),
                       const OutrosWidgets(),
-                      const SizedBox(height: 20)
+                      const SizedBox(height: 20),
                     ],
                   );
                 },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MesAtualWidgets extends StatefulWidget {
@@ -37,7 +38,7 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                   children: [
                     IconButton(
                         onPressed: () {
-                          createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
+                          showConfirmationDialog(context, createListCubit, listaMesAtual[index]);
                         },
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
@@ -80,6 +81,33 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                   TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
                 ],
               ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static showConfirmationDialog(BuildContext context, CreateListCubit cubit, ListasModel model) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Apagar ${model.titulo} ?'),
+          content: Text('Valor ${Formatervalor.formaterForReal(model.valor)}'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                cubit.deleteTaskMesAtual(model.id);
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: Text('Sim'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: Text('Não'),
             ),
           ],
         );
