@@ -18,7 +18,7 @@ class Formatervalor {
     int lastDotIndex = valorComPonto.lastIndexOf('.');
     if (lastDotIndex != -1) {
       valorComPonto = valorComPonto.replaceAll('.', '');
-      valorComPonto = valorComPonto.substring(0, lastDotIndex) + '.' + valorComPonto.substring(lastDotIndex);
+      valorComPonto = '${valorComPonto.substring(0, lastDotIndex)}.${valorComPonto.substring(lastDotIndex)}';
     }
 
     double valorNumerico = valorComPonto.isEmpty ? 0.0 : double.parse(valorComPonto);

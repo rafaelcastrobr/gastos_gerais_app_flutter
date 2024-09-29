@@ -7,6 +7,7 @@ import 'package:gastos_gerais_app_flutter/screens/widgets/MesAtualWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/OutrosWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ProxMesWidgets.dart';
 import 'package:gastos_gerais_app_flutter/widgets/TextInputWidget.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Home extends StatefulWidget {
@@ -84,6 +85,7 @@ class _HomeState extends State<Home> {
       child: GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
         child: Scaffold(
+          backgroundColor: Colors.deepOrange[50],
           body: Padding(
             padding: const EdgeInsets.all(15),
             child: SingleChildScrollView(
@@ -94,10 +96,15 @@ class _HomeState extends State<Home> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       const Icon(Icons.account_balance, color: Colors.black),
-                      TextInputWidget(controller: state.controllerTitulo ?? _controllerTitulo, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
-                      TextInputWidget(controller: state.controllerValor ?? _controllerValor, isValor: true, titulo: "Valor", typeInput: TextInputType.number),
+                      Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       Row(children: [
-                        const Text('ENTRADA'),
+                        TextInputWidget(controller: state.controllerTitulo ?? _controllerTitulo, largura: 200, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
+                        const SizedBox(width: 40),
+                        TextInputWidget(controller: state.controllerValor ?? _controllerValor, largura: 100, isValor: true, titulo: "Valor", typeInput: TextInputType.number),
+                      ]),
+                      const SizedBox(height: 20),
+                      Row(children: [
+                        Text('ENTRADA', style: GoogleFonts.lato()),
                         Checkbox(
                           value: entradaCheck,
                           onChanged: (value) {
@@ -107,7 +114,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
-                        const Text('SAÍDA'),
+                        Text('SAÍDA', style: GoogleFonts.lato()),
                         Checkbox(
                           value: saidaCheck,
                           onChanged: (value) {
@@ -119,7 +126,7 @@ class _HomeState extends State<Home> {
                         ),
                       ]),
                       Row(children: [
-                        const Text('MÊS ATUAL'),
+                        Text('MÊS ATUAL', style: GoogleFonts.lato()),
                         Checkbox(
                           value: mesAtualCheck,
                           onChanged: (value) {
@@ -130,7 +137,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
-                        const Text('PROX. MÊS'),
+                        Text('PROX. MÊS', style: GoogleFonts.lato()),
                         Checkbox(
                           value: proxMesCheck,
                           onChanged: (value) {
@@ -141,7 +148,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
-                        const Text('OUTROS'),
+                        Text('OUTROS', style: GoogleFonts.lato()),
                         Checkbox(
                           value: outrosCheck,
                           onChanged: (value) {

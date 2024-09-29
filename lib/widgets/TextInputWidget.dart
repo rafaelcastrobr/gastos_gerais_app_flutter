@@ -6,7 +6,8 @@ class TextInputWidget extends StatefulWidget {
   final String titulo;
   final TextInputType typeInput;
   final bool isValor;
-  const TextInputWidget({super.key, required this.controller, required this.titulo, required this.typeInput, required this.isValor});
+  final double largura;
+  const TextInputWidget({super.key, required this.controller, required this.titulo, required this.typeInput, required this.isValor, required this.largura});
 
   @override
   State<TextInputWidget> createState() => _TextInputWidgetState();
@@ -15,13 +16,16 @@ class TextInputWidget extends StatefulWidget {
 class _TextInputWidgetState extends State<TextInputWidget> {
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      style: const TextStyle(fontSize: 20),
-      controller: widget.controller,
-      keyboardType: widget.typeInput,
-      inputFormatters: widget.isValor ? [CurrencyInputFormatter()] : [],
-      decoration: InputDecoration(
-        label: Text(widget.titulo),
+    return SizedBox(
+      width: widget.largura,
+      child: TextField(
+        style: const TextStyle(fontSize: 20),
+        controller: widget.controller,
+        keyboardType: widget.typeInput,
+        inputFormatters: widget.isValor ? [CurrencyInputFormatter()] : [],
+        decoration: InputDecoration(
+          label: Text(widget.titulo),
+        ),
       ),
     );
   }

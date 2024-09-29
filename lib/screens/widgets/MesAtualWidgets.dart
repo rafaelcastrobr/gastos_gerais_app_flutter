@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MesAtualWidgets extends StatefulWidget {
   const MesAtualWidgets({super.key});
@@ -23,9 +24,9 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
 
         return Column(
           children: [
-            const Align(alignment: Alignment.centerLeft, child: Text('Mês Atual', style: TextStyle(fontSize: 30, color: Colors.grey))),
+            Align(alignment: Alignment.centerLeft, child: Text('Mês Atual', style: GoogleFonts.lato(fontSize: 30, color: Colors.grey))),
             const Divider(),
-            if (listaMesAtual.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 20)),
+            if (listaMesAtual.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -62,8 +63,8 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
                       children: [
-                        Text('${listaMesAtual[index].titulo.toUpperCase()} * ', style: const TextStyle(fontSize: 20)),
-                        Text(valor, style: TextStyle(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
+                        Text('${listaMesAtual[index].titulo.toUpperCase()} * ', style: GoogleFonts.lato(fontSize: 20)),
+                        Text(valor, style: GoogleFonts.lato(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
                       ],
                     ),
                   ],
@@ -76,7 +77,7 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                 text: 'TOTAL: ',
                 style: const TextStyle(fontSize: 20, color: Colors.black),
                 children: <TextSpan>[
-                  TextSpan(text: total, style: TextStyle(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                  TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
                 ],
               ),
             ),
