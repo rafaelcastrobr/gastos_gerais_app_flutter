@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/screens/Home.dart';
@@ -6,14 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // path-provider
-  final directory = await getApplicationDocumentsDirectory();
-  // init storage
-  HydratedBloc.storage = await HydratedStorage.build(
-    storageDirectory: directory,
-  );
-
   runApp(const MyApp());
 }
 

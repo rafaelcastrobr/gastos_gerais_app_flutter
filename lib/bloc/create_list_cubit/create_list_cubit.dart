@@ -5,14 +5,27 @@ import 'package:equatable/equatable.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:meta/meta.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'create_list_state.dart';
 
-class CreateListCubit extends HydratedCubit<CreateListState> {
+class CreateListCubit extends Cubit<CreateListState> {
   CreateListCubit() : super(CreateListInitial());
 
-  void addTaskMesAtual(String id, String text, int value) {
+  void initMesAtual(List<ListasModel> mesAtual, List<ListasModel> proxMes, List<ListasModel> outros) async {
+    
+    emit(CreateListState(mesAtual: mesAtual, proxMes: proxMes, outros: outros));
+  }
+
+  void addTaskMesAtual(String id, String text, int value) async {
     final mesAtual = [...?state.mesAtual, ListasModel(id: id, titulo: text, valor: value)];
+    
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var listConvert = jsonEncode(mesAtual);
+    prefs.setString('mesAtual', listConvert);
+
+
     emit(CreateListState(mesAtual: mesAtual));
   }
 
@@ -66,15 +79,20 @@ class CreateListCubit extends HydratedCubit<CreateListState> {
   }
 
 
-  void deleteTaskMesAtual(String id) {
+  void deleteTaskMesAtual(String id) async{
     var newListMesAtual = [...?state.mesAtual];
-    final mesAtual = state.copyWith(
-        mesAtual: newListMesAtual
+
+    var listaAtualizada = newListMesAtual
           ..removeWhere(
             (element) => element.id == id,
-          ));
+          );
 
-    emit(mesAtual);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var listConvert = jsonEncode(listaAtualizada);
+    prefs.setString('mesAtual', listConvert);
+
+    emit(state.copyWith(mesAtual: listaAtualizada));
   }
 
   void deleteTaskProxAtual(String id) {

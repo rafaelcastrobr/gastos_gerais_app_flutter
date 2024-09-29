@@ -8,7 +8,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable()
 class ListasModel extends Equatable {
-  final String id;
+  String id;
   String titulo;
   int valor;
   int iconEnum;
@@ -24,7 +24,7 @@ class ListasModel extends Equatable {
     int? valor,
     int? iconEnum,
   }) {
-    return ListasModel(id: id?? this.id, titulo: titulo ?? this.titulo, valor: valor ?? this.valor, iconEnum: iconEnum ?? this.iconEnum);
+    return ListasModel(id: id ?? this.id, titulo: titulo ?? this.titulo, valor: valor ?? this.valor, iconEnum: iconEnum ?? this.iconEnum);
   }
 
   Map<String, dynamic> toMap() {

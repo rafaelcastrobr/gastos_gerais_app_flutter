@@ -37,17 +37,17 @@ const CreateListState({this.mesAtual, this.proxMes, this.outros});
   final List<ListasModel> mesAtual = (map['mesAtual'] == null ? [] : jsonDecode(map['mesAtual']))
       .map((task) => ListasModel.fromJson(task))
       .toList();
-  // final List<ListasModel> proxMes = (map['proxMes'] == null ? [] : jsonDecode(map['proxMes']))
-  //     .map((task) => ListasModel.fromJson(task))
-  //     .toList();
-  // final List<ListasModel> outros = (map['outros'] == null ? [] : jsonDecode(map['outros']))
-  //     .map((task) => ListasModel.fromJson(task))
-  //     .toList();
+  final List<ListasModel> proxMes = (map['proxMes'] == null ? [] : jsonDecode(map['proxMes']))
+      .map((task) => ListasModel.fromJson(task))
+      .toList();
+  final List<ListasModel> outros = (map['outros'] == null ? [] : jsonDecode(map['outros']))
+      .map((task) => ListasModel.fromJson(task))
+      .toList();
 
   return CreateListState(
     mesAtual: mesAtual,
-    outros: [],
-    proxMes: [],
+    outros: outros,
+    proxMes: proxMes,
   );
 }
 
