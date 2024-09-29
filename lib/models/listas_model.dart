@@ -10,7 +10,7 @@ import 'package:json_annotation/json_annotation.dart';
 class ListasModel extends Equatable {
   String id;
   String titulo;
-  int valor;
+  double valor;
   int iconEnum;
 
   ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0});
@@ -21,7 +21,7 @@ class ListasModel extends Equatable {
   ListasModel copyWith({
     String? titulo,
     String? id,
-    int? valor,
+    double? valor,
     int? iconEnum,
   }) {
     return ListasModel(id: id ?? this.id, titulo: titulo ?? this.titulo, valor: valor ?? this.valor, iconEnum: iconEnum ?? this.iconEnum);
@@ -48,5 +48,4 @@ class ListasModel extends Equatable {
   String toJson() => json.encode(toMap());
 
   factory ListasModel.fromJson(String source) => ListasModel.fromMap(json.decode(source) as Map<String, dynamic>);
-  
 }

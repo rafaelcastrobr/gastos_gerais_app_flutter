@@ -19,27 +19,53 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
       builder: (context, state) {
         final listaOutros = state.outros ?? [];
 
+        var total = listaOutros.fold(0.0, (previousValue, element) => previousValue + element.valor);
+
         return Column(
           children: [
-            const Text('Outros', style: TextStyle(fontSize: 25)),
+            Align(alignment: Alignment.centerLeft, child: Text('Outros', style: TextStyle(fontSize: 30, color: Colors.green[400]))),
+            Divider(),
             if (listaOutros.isEmpty) const Text('Adicione valores', style: TextStyle(fontSize: 15)),
             ListView.builder(
               shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: listaOutros.length,
               itemBuilder: (context, index) {
                 return Row(
                   children: [
-                    Text(listaOutros[index].titulo),
-                    const SizedBox(width: 10),
-                    Text('${listaOutros[index].valor}'),
                     IconButton(
                         onPressed: () {
-                          createListCubit.deleteTaskProxAtual(listaOutros[index].id);
+                          createListCubit.deleteTaskOutros(listaOutros[index].id);
                         },
-                        icon: const Icon(Icons.delete, color: Colors.red))
+                        icon: const Icon(Icons.delete, color: Colors.red)),
+                    IconButton(
+                        onPressed: () {
+                          //createListCubit.deleteTaskMesAtual(listaMesAtual[index].id);
+                        },
+                        icon: const Icon(Icons.copy, color: Colors.blue)),
+                    IconButton(
+                        onPressed: () {
+                          //createListCubit.editTaskMesAtual(listaMesAtual[index].id);
+                        },
+                        icon: const Icon(Icons.edit, color: Colors.green)),
+                    Text('${listaOutros[index].titulo.toUpperCase()} * ${listaOutros[index].valor}', style: TextStyle(fontSize: 25)),
                   ],
                 );
               },
+            ),
+            const SizedBox(height: 20),
+            RichText(
+              text: TextSpan(
+                text: 'TOTAL: ',
+                style: const TextStyle(fontSize: 20, color: Colors.black),
+                children: <TextSpan>[
+                  TextSpan(
+                      text: '$total',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      )),
+                ],
+              ),
             ),
           ],
         );
