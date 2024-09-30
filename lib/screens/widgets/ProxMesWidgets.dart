@@ -13,6 +13,13 @@ class ProxMesWidget extends StatefulWidget {
 }
 
 class _ProxMesWidgetState extends State<ProxMesWidget> {
+  List<ListasModel> listaProxMesSoma = [];
+
+  addSoma(ListasModel model) {
+    if (listaProxMesSoma.contains(model)) return;
+    listaProxMesSoma.add(model);
+  }
+
   @override
   Widget build(BuildContext context) {
     var createListCubit = context.read<CreateListCubit>();
@@ -23,10 +30,21 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
         final listaProxMes = state.proxMes ?? [];
 
         var total = Formatervalor.formaterForReal(listaProxMes.fold(0.0, (previousValue, element) => previousValue + element.valor));
+        var totalSoma = Formatervalor.formaterForReal(listaProxMesSoma.fold(0.0, (previousValue, element) => previousValue + element.valor));
 
         return Column(
           children: [
-            Align(alignment: Alignment.centerLeft, child: Text('Próx. Mês', style: GoogleFonts.lato(fontSize: 30, color: Colors.grey))),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Align(alignment: Alignment.centerLeft, child: Text('Próx. Mês', style: GoogleFonts.lato(fontSize: 25, color: Colors.grey))),
+                TextButton(
+                    onPressed: () {
+                      setState(() => listaProxMesSoma.clear());
+                    },
+                    child: Text('Lim. Soma', style: GoogleFonts.lato(fontSize: 15)))
+              ],
+            ),
             const Divider(),
             if (listaProxMes.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
             ListView.builder(
@@ -48,7 +66,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                           TextEditingController contText = TextEditingController();
                           TextEditingController contValor = TextEditingController();
                           contText.text = listaProxMes[index].titulo;
-                          contValor.text = listaProxMes[index].valor.toString();
+                          contValor.text = listaProxMes[index].valor.toString().replaceFirst('-', '').trim();
 
                           createListCubit.initControllerText(contText, contValor);
                         },
@@ -58,7 +76,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                           TextEditingController contText = TextEditingController();
                           TextEditingController contValor = TextEditingController();
                           contText.text = listaProxMes[index].titulo;
-                          contValor.text = listaProxMes[index].valor.toString();
+                          contValor.text = listaProxMes[index].valor.toString().replaceFirst('-', '').trim();
 
                           createListCubit.initControllerText(contText, contValor);
                           createListCubit.deleteTaskProxMes(listaProxMes[index].id);
@@ -66,10 +84,16 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
                       children: [
-                        Text('${listaProxMes[index].titulo.toUpperCase()} * ', style: GoogleFonts.lato(fontSize: 20)),
-                        Text(valor, style: GoogleFonts.lato(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
+                        Text('${listaProxMes[index].titulo.toUpperCase()} * ',
+                            style: GoogleFonts.lato(fontSize: 16, color: listaProxMesSoma.contains(listaProxMes[index]) ? Colors.orange : Colors.black)),
+                        Text(valor, style: GoogleFonts.lato(fontSize: 16, color: Formatervalor.verificaSeENegativo(valor))),
                       ],
                     ),
+                    IconButton(
+                        onPressed: () {
+                          setState(() => addSoma(listaProxMes[index]));
+                        },
+                        icon: const Icon(Icons.add))
                   ],
                 );
               },
@@ -78,12 +102,23 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
             RichText(
               text: TextSpan(
                 text: 'TOTAL: ',
-                style: const TextStyle(fontSize: 20, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.black),
                 children: <TextSpan>[
                   TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
                 ],
               ),
             ),
+            if (listaProxMesSoma.isNotEmpty) const SizedBox(height: 20),
+            if (listaProxMesSoma.isNotEmpty)
+              RichText(
+                text: TextSpan(
+                  text: 'SOMA: ',
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                  children: <TextSpan>[
+                    TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                  ],
+                ),
+              )
           ],
         );
       },
@@ -103,13 +138,13 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                 cubit.deleteTaskMesAtual(model.id);
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
-              child: Text('Sim'),
+              child: const Text('Sim'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
-              child: Text('Não'),
+              child: const Text('Não'),
             ),
           ],
         );

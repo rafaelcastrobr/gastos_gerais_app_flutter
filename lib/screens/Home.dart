@@ -100,13 +100,12 @@ class _HomeState extends State<Home> {
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
                       Row(children: [
-                        TextInputWidget(controller: state.controllerTitulo ?? _controllerTitulo, largura: 200, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
+                        TextInputWidget(controller: state.controllerTitulo ?? _controllerTitulo, largura: 180, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
                         const SizedBox(width: 40),
                         TextInputWidget(controller: state.controllerValor ?? _controllerValor, largura: 100, isValor: true, titulo: "Valor", typeInput: TextInputType.number),
                       ]),
                       const SizedBox(height: 20),
                       Row(children: [
-                        Text('ENTRADA', style: GoogleFonts.lato()),
                         Checkbox(
                           value: entradaCheck,
                           onChanged: (value) {
@@ -116,7 +115,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
-                        Text('SAÍDA', style: GoogleFonts.lato()),
+                        Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13)),
                         Checkbox(
                           value: saidaCheck,
                           onChanged: (value) {
@@ -126,9 +125,9 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
+                        Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13)),
                       ]),
                       Row(children: [
-                        Text('MÊS ATUAL', style: GoogleFonts.lato()),
                         Checkbox(
                           value: mesAtualCheck,
                           onChanged: (value) {
@@ -139,7 +138,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
-                        Text('PROX. MÊS', style: GoogleFonts.lato()),
+                        Text('MÊS ATUAL', style: GoogleFonts.lato(fontSize: 13)),
                         Checkbox(
                           value: proxMesCheck,
                           onChanged: (value) {
@@ -150,7 +149,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
-                        Text('OUTROS', style: GoogleFonts.lato()),
+                        Text('PROX. MÊS', style: GoogleFonts.lato(fontSize: 13)),
                         Checkbox(
                           value: outrosCheck,
                           onChanged: (value) {
@@ -161,6 +160,7 @@ class _HomeState extends State<Home> {
                             });
                           },
                         ),
+                        Text('OUTROS', style: GoogleFonts.lato()),
                       ]),
                       if (error)
                         ValueListenableBuilder(
@@ -168,7 +168,7 @@ class _HomeState extends State<Home> {
                           builder: (context, value, child) {
                             return Text(
                               '$value',
-                              style: const TextStyle(fontSize: 15, color: Colors.red),
+                              style: const TextStyle(fontSize: 14, color: Colors.red),
                             );
                           },
                         ),

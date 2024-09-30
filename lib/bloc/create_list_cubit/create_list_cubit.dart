@@ -40,7 +40,7 @@ class CreateListCubit extends Cubit<CreateListState> {
   }
 
   void addTaskMesAtual(String id, String text, double value) async {
-    final mesAtual = [...?state.mesAtual, ListasModel(id: id, titulo: text, valor: value)];
+    final mesAtual = [ListasModel(id: id, titulo: text, valor: value), ...?state.mesAtual];
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -51,7 +51,7 @@ class CreateListCubit extends Cubit<CreateListState> {
   }
 
   void addTaskProxMes(String id, String text, double value) async {
-    final proxMes = [...?state.proxMes, ListasModel(id: id, titulo: text, valor: value)];
+    final proxMes = [ListasModel(id: id, titulo: text, valor: value), ...?state.proxMes];
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -62,7 +62,7 @@ class CreateListCubit extends Cubit<CreateListState> {
   }
 
   void addTaskOutros(String id, String text, double value) async {
-    final outros = [...?state.outros, ListasModel(id: id, titulo: text, valor: value)];
+    final outros = [ListasModel(id: id, titulo: text, valor: value), ...?state.outros];
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -111,7 +111,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     emit(outros);
   }
 
-   deleteTaskMesAtual(String id) async {
+  deleteTaskMesAtual(String id) async {
     var newListMesAtual = [...?state.mesAtual];
 
     var listaAtualizada = newListMesAtual
@@ -124,7 +124,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     var listConvert = jsonEncode(listaAtualizada);
     prefs.setString('mesAtual', listConvert);
 
-    emit(state.copyWith(mesAtual: listaAtualizada, proxMes: state.proxMes, outros: state.outros,controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+    emit(state.copyWith(mesAtual: listaAtualizada, proxMes: state.proxMes, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
   }
 
   void deleteTaskProxMes(String id) async {
@@ -140,7 +140,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     var listConvert = jsonEncode(listaAtualizada);
     prefs.setString('proxMes', listConvert);
 
-    emit(state.copyWith(mesAtual: state.mesAtual, proxMes: listaAtualizada, outros: state.outros,controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+    emit(state.copyWith(mesAtual: state.mesAtual, proxMes: listaAtualizada, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
   }
 
   void deleteTaskOutros(String id) async {
@@ -156,7 +156,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     var listConvert = jsonEncode(listaAtualizada);
     prefs.setString('outros', listConvert);
 
-    emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: listaAtualizada,controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+    emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: listaAtualizada, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
   }
 
   @override

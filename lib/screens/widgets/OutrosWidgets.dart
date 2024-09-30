@@ -13,6 +13,13 @@ class OutrosWidgets extends StatefulWidget {
 }
 
 class _OutrosWidgetsState extends State<OutrosWidgets> {
+  List<ListasModel> listaOutrosSoma = [];
+
+  addSoma(ListasModel model) {
+    if (listaOutrosSoma.contains(model)) return;
+    listaOutrosSoma.add(model);
+  }
+
   @override
   Widget build(BuildContext context) {
     var createListCubit = context.read<CreateListCubit>();
@@ -23,10 +30,21 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
         final listaOutros = state.outros ?? [];
 
         var total = Formatervalor.formaterForReal(listaOutros.fold(0.0, (previousValue, element) => previousValue + element.valor));
+        var totalSoma = Formatervalor.formaterForReal(listaOutrosSoma.fold(0.0, (previousValue, element) => previousValue + element.valor));
 
         return Column(
           children: [
-            Align(alignment: Alignment.centerLeft, child: Text('Outros', style: GoogleFonts.lato(fontSize: 30, color: Colors.grey))),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Align(alignment: Alignment.centerLeft, child: Text('Outros', style: GoogleFonts.lato(fontSize: 25, color: Colors.grey))),
+                TextButton(
+                    onPressed: () {
+                      setState(() => listaOutrosSoma.clear());
+                    },
+                    child: Text('Lim. Soma', style: GoogleFonts.lato(fontSize: 15)))
+              ],
+            ),
             const Divider(),
             if (listaOutros.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
             ListView.builder(
@@ -48,7 +66,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                           TextEditingController contText = TextEditingController();
                           TextEditingController contValor = TextEditingController();
                           contText.text = listaOutros[index].titulo;
-                          contValor.text = listaOutros[index].valor.toString();
+                          contValor.text = listaOutros[index].valor.toString().replaceFirst('-', '').trim();
 
                           createListCubit.initControllerText(contText, contValor);
                         },
@@ -58,18 +76,24 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                           TextEditingController contText = TextEditingController();
                           TextEditingController contValor = TextEditingController();
                           contText.text = listaOutros[index].titulo;
-                          contValor.text = listaOutros[index].valor.toString();
+                          contValor.text = listaOutros[index].valor.toString().replaceFirst('-', '').trim();
 
                           createListCubit.initControllerText(contText, contValor);
-                          createListCubit.deleteTaskMesAtual(listaOutros[index].id);
+                          createListCubit.deleteTaskOutros(listaOutros[index].id);
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
                       children: [
-                        Text('${listaOutros[index].titulo.toUpperCase()} * ', style: GoogleFonts.lato(fontSize: 20)),
-                        Text(valor, style: GoogleFonts.lato(fontSize: 20, color: Formatervalor.verificaSeENegativo(valor))),
+                        Text('${listaOutros[index].titulo.toUpperCase()} * ',
+                            style: GoogleFonts.lato(fontSize: 16, color: listaOutrosSoma.contains(listaOutros[index]) ? Colors.orange : Colors.black)),
+                        Text(valor, style: GoogleFonts.lato(fontSize: 16, color: Formatervalor.verificaSeENegativo(valor))),
                       ],
                     ),
+                    IconButton(
+                        onPressed: () {
+                          setState(() => addSoma(listaOutros[index]));
+                        },
+                        icon: const Icon(Icons.add))
                   ],
                 );
               },
@@ -78,12 +102,23 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
             RichText(
               text: TextSpan(
                 text: 'TOTAL: ',
-                style: const TextStyle(fontSize: 20, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.black),
                 children: <TextSpan>[
                   TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
                 ],
               ),
             ),
+            if (listaOutrosSoma.isNotEmpty) const SizedBox(height: 20),
+            if (listaOutrosSoma.isNotEmpty)
+              RichText(
+                text: TextSpan(
+                  text: 'SOMA: ',
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
+                  children: <TextSpan>[
+                    TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                  ],
+                ),
+              )
           ],
         );
       },
@@ -103,13 +138,13 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                 cubit.deleteTaskMesAtual(model.id);
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
-              child: Text('Sim'),
+              child: const Text('Sim'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
-              child: Text('Não'),
+              child: const Text('Não'),
             ),
           ],
         );

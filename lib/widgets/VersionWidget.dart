@@ -19,10 +19,10 @@ class _VersionWidgetState extends State<VersionWidget> {
             final packageInfo = snapshot.data!;
             return Text('Versão: ${packageInfo.version}');
           } else {
-            return Text('Erro ao obter a versão');
+            return const Text('Erro ao obter a versão');
           }
         } else {
-          return CircularProgressIndicator();
+          return const CircularProgressIndicator();
         }
       },
     );
