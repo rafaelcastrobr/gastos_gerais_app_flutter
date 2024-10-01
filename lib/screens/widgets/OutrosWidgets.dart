@@ -135,7 +135,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                cubit.deleteTaskMesAtual(model.id);
+                cubit.deleteTaskOutros(model.id);
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
               child: const Text('Sim'),

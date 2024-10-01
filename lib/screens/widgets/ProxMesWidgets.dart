@@ -135,7 +135,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                cubit.deleteTaskMesAtual(model.id);
+                cubit.deleteTaskProxMes(model.id);
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
               child: const Text('Sim'),
