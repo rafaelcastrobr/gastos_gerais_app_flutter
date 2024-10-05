@@ -23,6 +23,8 @@ class _HomeState extends State<Home> {
   late final TextEditingController _controllerValor;
   late final CreateListCubit createListCubit;
   final ValueNotifier valueNotifier = ValueNotifier("");
+  late final FocusNode focusTitulo;
+  late final FocusNode focusValor;
 
   bool mesAtualCheck = false;
   bool proxMesCheck = false;
@@ -34,17 +36,34 @@ class _HomeState extends State<Home> {
   bool error = false;
   String errorText = '';
 
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0.0,
+      duration: Duration(seconds: 1),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     _controllerTitulo = TextEditingController();
     _controllerValor = TextEditingController();
     createListCubit = context.read<CreateListCubit>();
-
+    focusTitulo = FocusNode();
+    focusValor = FocusNode();
     listShared();
 
     createListCubit.initControllerText(_controllerTitulo, _controllerValor);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
   }
 
   bool validarEntrada() {
@@ -90,6 +109,7 @@ class _HomeState extends State<Home> {
           body: Padding(
             padding: const EdgeInsets.all(15),
             child: SingleChildScrollView(
+              controller: _scrollController,
               child: BlocBuilder<CreateListCubit, CreateListState>(
                 bloc: createListCubit,
                 builder: (context, state) {
@@ -100,67 +120,79 @@ class _HomeState extends State<Home> {
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
                       Row(children: [
-                        TextInputWidget(controller: state.controllerTitulo ?? _controllerTitulo, largura: 180, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
+                        TextInputWidget(focusNode: focusTitulo, controller: state.controllerTitulo ?? _controllerTitulo, largura: 180, isValor: false, titulo: "Titulo", typeInput: TextInputType.text),
                         const SizedBox(width: 40),
-                        TextInputWidget(controller: state.controllerValor ?? _controllerValor, largura: 100, isValor: true, titulo: "Valor", typeInput: TextInputType.number),
+                        TextInputWidget(focusNode: focusValor, controller: state.controllerValor ?? _controllerValor, largura: 100, isValor: true, titulo: "Valor", typeInput: TextInputType.number),
                       ]),
                       const SizedBox(height: 20),
-                      Row(children: [
-                        Checkbox(
-                          value: entradaCheck,
-                          onChanged: (value) {
-                            setState(() {
-                              entradaCheck = !entradaCheck;
-                              saidaCheck = false;
-                            });
-                          },
+                      Wrap(children: [
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Checkbox(
+                            value: entradaCheck,
+                            onChanged: (value) {
+                              setState(() {
+                                entradaCheck = !entradaCheck;
+                                saidaCheck = false;
+                              });
+                            },
+                          ),
+                          Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13, color: Colors.red)),
+                        ]),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Checkbox(
+                            value: saidaCheck,
+                            onChanged: (value) {
+                              setState(() {
+                                saidaCheck = !saidaCheck;
+                                entradaCheck = false;
+                              });
+                            },
+                          ),
+                          Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13, color: const Color.fromARGB(255, 9, 101, 177))),
+                        ]),
+                        const Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [],
                         ),
-                        Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13)),
-                        Checkbox(
-                          value: saidaCheck,
-                          onChanged: (value) {
-                            setState(() {
-                              saidaCheck = !saidaCheck;
-                              entradaCheck = false;
-                            });
-                          },
-                        ),
-                        Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13)),
-                      ]),
-                      Row(children: [
-                        Checkbox(
-                          value: mesAtualCheck,
-                          onChanged: (value) {
-                            setState(() {
-                              mesAtualCheck = !mesAtualCheck;
-                              proxMesCheck = false;
-                              outrosCheck = false;
-                            });
-                          },
-                        ),
-                        Text('MÊS ATUAL', style: GoogleFonts.lato(fontSize: 13)),
-                        Checkbox(
-                          value: proxMesCheck,
-                          onChanged: (value) {
-                            setState(() {
-                              mesAtualCheck = false;
-                              proxMesCheck = !proxMesCheck;
-                              outrosCheck = false;
-                            });
-                          },
-                        ),
-                        Text('PROX. MÊS', style: GoogleFonts.lato(fontSize: 13)),
-                        Checkbox(
-                          value: outrosCheck,
-                          onChanged: (value) {
-                            setState(() {
-                              outrosCheck = !outrosCheck;
-                              proxMesCheck = false;
-                              mesAtualCheck = false;
-                            });
-                          },
-                        ),
-                        Text('OUTROS', style: GoogleFonts.lato()),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Checkbox(
+                            value: mesAtualCheck,
+                            onChanged: (value) {
+                              setState(() {
+                                mesAtualCheck = !mesAtualCheck;
+                                proxMesCheck = false;
+                                outrosCheck = false;
+                              });
+                            },
+                          ),
+                          Text('MÊS ATUAL', style: GoogleFonts.lato(fontSize: 13)),
+                        ]),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Checkbox(
+                            value: proxMesCheck,
+                            onChanged: (value) {
+                              setState(() {
+                                mesAtualCheck = false;
+                                proxMesCheck = !proxMesCheck;
+                                outrosCheck = false;
+                              });
+                            },
+                          ),
+                          Text('PROX. MÊS', style: GoogleFonts.lato(fontSize: 13)),
+                        ]),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Checkbox(
+                            value: outrosCheck,
+                            onChanged: (value) {
+                              setState(() {
+                                outrosCheck = !outrosCheck;
+                                proxMesCheck = false;
+                                mesAtualCheck = false;
+                              });
+                            },
+                          ),
+                          Text('OUTROS', style: GoogleFonts.lato()),
+                        ])
                       ]),
                       if (error)
                         ValueListenableBuilder(
@@ -214,12 +246,17 @@ class _HomeState extends State<Home> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      const MesAtualWidgets(),
+                      MesAtualWidgets(funcOnTop: _scrollToTop),
                       const SizedBox(height: 20),
-                      const ProxMesWidget(),
+                      ProxMesWidget(funcOnTop: _scrollToTop),
                       const SizedBox(height: 20),
-                      const OutrosWidgets(),
-                      const SizedBox(height: 20),
+                      OutrosWidgets(funcOnTop: _scrollToTop),
+                      const SizedBox(height: 40),
+                      const Center(
+                        child: Row(
+                          children: [Icon(Icons.add, size: 20), Text('calcular itens de forma mais rápida')],
+                        ),
+                      )
                     ],
                   );
                 },

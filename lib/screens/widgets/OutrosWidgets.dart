@@ -6,7 +6,9 @@ import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OutrosWidgets extends StatefulWidget {
-  const OutrosWidgets({super.key});
+  final Function funcOnTop;
+
+  const OutrosWidgets({super.key, required this.funcOnTop});
 
   @override
   State<OutrosWidgets> createState() => _OutrosWidgetsState();
@@ -38,15 +40,40 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Align(alignment: Alignment.centerLeft, child: Text('Outros', style: GoogleFonts.lato(fontSize: 25, color: Colors.grey))),
-                TextButton(
-                    onPressed: () {
-                      setState(() => listaOutrosSoma.clear());
-                    },
-                    child: Text('Lim. Soma', style: GoogleFonts.lato(fontSize: 15)))
+                if (listaOutrosSoma.isNotEmpty)
+                  TextButton(
+                      onPressed: () {
+                        setState(() => listaOutrosSoma.clear());
+                      },
+                      child: Text('Limpar Soma', style: GoogleFonts.lato(fontSize: 15)))
               ],
             ),
             const Divider(),
             if (listaOutros.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
+            if (listaOutros.isNotEmpty)
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                RichText(
+                  text: TextSpan(
+                    text: 'TOTAL: ',
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    children: <TextSpan>[
+                      TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                    ],
+                  ),
+                ),
+                if (listaOutrosSoma.isNotEmpty) const SizedBox(height: 20),
+                if (listaOutrosSoma.isNotEmpty)
+                  RichText(
+                    text: TextSpan(
+                      text: 'SOMA: ',
+                      style: const TextStyle(fontSize: 16, color: Colors.orange),
+                      children: <TextSpan>[
+                        TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                      ],
+                    ),
+                  )
+              ]),
+            const SizedBox(height: 20),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -58,7 +85,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                   children: [
                     IconButton(
                         onPressed: () {
-                          showConfirmationDialog(context, createListCubit, listaOutros[index]);
+                          showConfirmationDeleteDialog(context, createListCubit, listaOutros[index]);
                         },
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
@@ -69,17 +96,14 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                           contValor.text = listaOutros[index].valor.toString().replaceFirst('-', '').trim();
 
                           createListCubit.initControllerText(contText, contValor);
+
+                          widget.funcOnTop.call();
                         },
                         icon: const Icon(Icons.copy, color: Colors.blue)),
                     IconButton(
                         onPressed: () {
-                          TextEditingController contText = TextEditingController();
-                          TextEditingController contValor = TextEditingController();
-                          contText.text = listaOutros[index].titulo;
-                          contValor.text = listaOutros[index].valor.toString().replaceFirst('-', '').trim();
+                          showConfirmationEditDialog(context, createListCubit, listaOutros[index], widget.funcOnTop);
 
-                          createListCubit.initControllerText(contText, contValor);
-                          createListCubit.deleteTaskOutros(listaOutros[index].id);
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
@@ -98,34 +122,13 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                 );
               },
             ),
-            const SizedBox(height: 20),
-            RichText(
-              text: TextSpan(
-                text: 'TOTAL: ',
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-                children: <TextSpan>[
-                  TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
-                ],
-              ),
-            ),
-            if (listaOutrosSoma.isNotEmpty) const SizedBox(height: 20),
-            if (listaOutrosSoma.isNotEmpty)
-              RichText(
-                text: TextSpan(
-                  text: 'SOMA: ',
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                  children: <TextSpan>[
-                    TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
-                  ],
-                ),
-              )
           ],
         );
       },
     );
   }
 
-  static showConfirmationDialog(BuildContext context, CreateListCubit cubit, ListasModel model) {
+  static showConfirmationDeleteDialog(BuildContext context, CreateListCubit cubit, ListasModel model) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -136,6 +139,41 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
             TextButton(
               onPressed: () {
                 cubit.deleteTaskOutros(model.id);
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Sim'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Não'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static showConfirmationEditDialog(BuildContext context, CreateListCubit cubit, ListasModel model, Function funcOnTop) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Editar ${model.titulo} ?'),
+          content: Text('Valor ${Formatervalor.formaterForReal(model.valor)}'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                TextEditingController contText = TextEditingController();
+                TextEditingController contValor = TextEditingController();
+                contText.text = model.titulo;
+                contValor.text = model.valor.toString().replaceFirst('-', '').trim();
+
+                cubit.initControllerText(contText, contValor);
+                cubit.deleteTaskProxMes(model.id);
+
+                funcOnTop.call();
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
               child: const Text('Sim'),

@@ -6,7 +6,9 @@ import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ProxMesWidget extends StatefulWidget {
-  const ProxMesWidget({super.key});
+  final Function funcOnTop;
+
+  const ProxMesWidget({super.key, required this.funcOnTop});
 
   @override
   State<ProxMesWidget> createState() => _ProxMesWidgetState();
@@ -38,15 +40,40 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Align(alignment: Alignment.centerLeft, child: Text('Próx. Mês', style: GoogleFonts.lato(fontSize: 25, color: Colors.grey))),
+                if (listaProxMesSoma.isNotEmpty)
                 TextButton(
                     onPressed: () {
                       setState(() => listaProxMesSoma.clear());
                     },
-                    child: Text('Lim. Soma', style: GoogleFonts.lato(fontSize: 15)))
+                    child: Text('Limpar Soma', style: GoogleFonts.lato(fontSize: 15)))
               ],
             ),
             const Divider(),
             if (listaProxMes.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
+            if (listaProxMes.isNotEmpty)
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                RichText(
+                  text: TextSpan(
+                    text: 'TOTAL: ',
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    children: <TextSpan>[
+                      TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                    ],
+                  ),
+                ),
+                if (listaProxMesSoma.isNotEmpty) const SizedBox(height: 20),
+                if (listaProxMesSoma.isNotEmpty)
+                  RichText(
+                    text: TextSpan(
+                      text: 'SOMA: ',
+                      style: const TextStyle(fontSize: 16, color: Colors.orange),
+                      children: <TextSpan>[
+                        TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                      ],
+                    ),
+                  ),
+              ]),
+            const SizedBox(height: 20),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -58,7 +85,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                   children: [
                     IconButton(
                         onPressed: () {
-                          showConfirmationDialog(context, createListCubit, listaProxMes[index]);
+                          showConfirmationDeleteDialog(context, createListCubit, listaProxMes[index]);
                         },
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
@@ -69,17 +96,13 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                           contValor.text = listaProxMes[index].valor.toString().replaceFirst('-', '').trim();
 
                           createListCubit.initControllerText(contText, contValor);
+
+                          widget.funcOnTop.call();
                         },
                         icon: const Icon(Icons.copy, color: Colors.blue)),
                     IconButton(
                         onPressed: () {
-                          TextEditingController contText = TextEditingController();
-                          TextEditingController contValor = TextEditingController();
-                          contText.text = listaProxMes[index].titulo;
-                          contValor.text = listaProxMes[index].valor.toString().replaceFirst('-', '').trim();
-
-                          createListCubit.initControllerText(contText, contValor);
-                          createListCubit.deleteTaskProxMes(listaProxMes[index].id);
+                          showConfirmationEditDialog(context, createListCubit, listaProxMes[index], widget.funcOnTop);
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
@@ -98,34 +121,13 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                 );
               },
             ),
-            const SizedBox(height: 20),
-            RichText(
-              text: TextSpan(
-                text: 'TOTAL: ',
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-                children: <TextSpan>[
-                  TextSpan(text: total, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
-                ],
-              ),
-            ),
-            if (listaProxMesSoma.isNotEmpty) const SizedBox(height: 20),
-            if (listaProxMesSoma.isNotEmpty)
-              RichText(
-                text: TextSpan(
-                  text: 'SOMA: ',
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                  children: <TextSpan>[
-                    TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
-                  ],
-                ),
-              )
           ],
         );
       },
     );
   }
 
-  static showConfirmationDialog(BuildContext context, CreateListCubit cubit, ListasModel model) {
+  static showConfirmationDeleteDialog(BuildContext context, CreateListCubit cubit, ListasModel model) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -136,6 +138,41 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
             TextButton(
               onPressed: () {
                 cubit.deleteTaskProxMes(model.id);
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Sim'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Não'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+   static showConfirmationEditDialog(BuildContext context, CreateListCubit cubit, ListasModel model, Function funcOnTop) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Editar ${model.titulo} ?'),
+          content: Text('Valor ${Formatervalor.formaterForReal(model.valor)}'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                TextEditingController contText = TextEditingController();
+                TextEditingController contValor = TextEditingController();
+                contText.text = model.titulo;
+                contValor.text = model.valor.toString().replaceFirst('-', '').trim();
+
+                cubit.initControllerText(contText, contValor);
+                cubit.deleteTaskProxMes(model.id);
+
+                funcOnTop.call();
                 Navigator.of(context).pop(); // Fecha o diálogo
               },
               child: const Text('Sim'),
