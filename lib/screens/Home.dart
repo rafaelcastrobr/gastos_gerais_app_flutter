@@ -136,7 +136,7 @@ class _HomeState extends State<Home> {
                               });
                             },
                           ),
-                          Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13, color: Colors.red)),
+                          Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13, color: const Color.fromARGB(255, 9, 101, 177))),
                         ]),
                         Row(mainAxisSize: MainAxisSize.min, children: [
                           Checkbox(
@@ -148,7 +148,7 @@ class _HomeState extends State<Home> {
                               });
                             },
                           ),
-                          Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13, color: const Color.fromARGB(255, 9, 101, 177))),
+                          Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13, color: Colors.red)),
                         ]),
                         const Row(
                           mainAxisSize: MainAxisSize.max,
