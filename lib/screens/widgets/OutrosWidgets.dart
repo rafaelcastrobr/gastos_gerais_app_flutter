@@ -68,7 +68,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                       text: 'SOMA: ',
                       style: const TextStyle(fontSize: 16, color: Colors.orange),
                       children: <TextSpan>[
-                        TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                        TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(totalSoma))),
                       ],
                     ),
                   )
@@ -154,6 +154,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
       },
     );
   }
+  
 
   static showConfirmationEditDialog(BuildContext context, CreateListCubit cubit, ListasModel model, Function funcOnTop) {
     showDialog(
@@ -171,7 +172,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                 contValor.text = model.valor.toString().replaceFirst('-', '').trim();
 
                 cubit.initControllerText(contText, contValor);
-                cubit.deleteTaskProxMes(model.id);
+                cubit.deleteTaskOutros(model.id);
 
                 funcOnTop.call();
                 Navigator.of(context).pop(); // Fecha o diálogo

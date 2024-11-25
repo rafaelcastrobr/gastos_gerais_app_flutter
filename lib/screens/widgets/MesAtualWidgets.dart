@@ -65,7 +65,7 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                     text: 'SOMA: ',
                     style: const TextStyle(fontSize: 16, color: Colors.orange),
                     children: <TextSpan>[
-                      TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                      TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(totalSoma))),
                     ],
                   ),
                 ),

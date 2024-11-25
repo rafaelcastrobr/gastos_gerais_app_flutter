@@ -159,6 +159,25 @@ class CreateListCubit extends Cubit<CreateListState> {
     emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: listaAtualizada, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
   }
 
+  void sendMesAtual() async {
+    final mesAtual = [
+      ...?state.mesAtual,
+      ...?state.proxMes,
+    ];
+    List<ListasModel> proxMesConvert = [];
+
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var listConvertProxMes = jsonEncode(proxMesConvert);
+    prefs.setString('proxMes', listConvertProxMes);
+
+    var listConvertMesAtual = jsonEncode(mesAtual);
+    prefs.setString('mesAtual', listConvertMesAtual);
+
+    emit(CreateListState(proxMes: proxMesConvert, mesAtual: mesAtual, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+  }
+
   @override
   CreateListState? fromJson(Map<String, dynamic> json) {
     final initialData = CreateListState.fromMap(json);

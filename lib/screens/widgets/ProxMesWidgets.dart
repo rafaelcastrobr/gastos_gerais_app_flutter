@@ -40,12 +40,21 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Align(alignment: Alignment.centerLeft, child: Text('Próx. Mês', style: GoogleFonts.lato(fontSize: 25, color: Colors.grey))),
-                if (listaProxMesSoma.isNotEmpty)
+                if(listaProxMes.isNotEmpty)
                 TextButton(
-                    onPressed: () {
-                      setState(() => listaProxMesSoma.clear());
-                    },
-                    child: Text('Limpar Soma', style: GoogleFonts.lato(fontSize: 15)))
+                  onPressed: () {
+                    showConfirmationSendMesAtualDialog(context, createListCubit);
+                  },
+                  child:const Row(
+                    children: [Text("Mês Atual"), SizedBox(width: 10), Icon(Icons.send)],
+                  ),
+                ),
+                if (listaProxMesSoma.isNotEmpty)
+                  TextButton(
+                      onPressed: () {
+                        setState(() => listaProxMesSoma.clear());
+                      },
+                      child: Text('Limpar Soma', style: GoogleFonts.lato(fontSize: 15)))
               ],
             ),
             const Divider(),
@@ -68,7 +77,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                       text: 'SOMA: ',
                       style: const TextStyle(fontSize: 16, color: Colors.orange),
                       children: <TextSpan>[
-                        TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(total))),
+                        TextSpan(text: totalSoma, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(totalSoma))),
                       ],
                     ),
                   ),
@@ -154,7 +163,34 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
     );
   }
 
-   static showConfirmationEditDialog(BuildContext context, CreateListCubit cubit, ListasModel model, Function funcOnTop) {
+  
+  static showConfirmationSendMesAtualDialog(BuildContext context, CreateListCubit cubit) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Trocar a Lista de Posição ?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                cubit.sendMesAtual();
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Sim'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Não'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static showConfirmationEditDialog(BuildContext context, CreateListCubit cubit, ListasModel model, Function funcOnTop) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
