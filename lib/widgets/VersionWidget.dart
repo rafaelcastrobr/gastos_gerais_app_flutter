@@ -17,7 +17,7 @@ class _VersionWidgetState extends State<VersionWidget> {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasData) {
             final packageInfo = snapshot.data!;
-            return Text('Versão: ${packageInfo.version}');
+            return Text('Versão: ${packageInfo.version} (build ${packageInfo.buildNumber})');
           } else {
             return const Text('Erro ao obter a versão');
           }
