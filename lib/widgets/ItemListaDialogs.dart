@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 import 'package:gastos_gerais_app_flutter/functions/parcelas.dart';
+import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:gastos_gerais_app_flutter/utils/formtaterTexts.dart';
+import 'package:gastos_gerais_app_flutter/widgets/CategoriaField.dart';
 
 /// Pergunta se quer apagar o item. Depois de apagar, mostra "Desfazer".
 Future<void> confirmarApagar(BuildContext context, CreateListCubit cubit, TipoLista tipo, ListasModel model, int indice) async {
@@ -46,19 +49,20 @@ Future<void> confirmarApagar(BuildContext context, CreateListCubit cubit, TipoLi
 Future<void> editarItem(BuildContext context, CreateListCubit cubit, TipoLista tipo, ListasModel model) async {
   final novo = await showDialog<ListasModel>(
     context: context,
-    builder: (_) => _EditarItemDialog(model: model, mostrarRecorrente: tipo != TipoLista.outros),
+    builder: (_) => _EditarItemDialog(model: model, mostrarRecorrente: tipo != TipoLista.outros, cubit: cubit),
   );
 
   if (novo == null) return;
 
-  await cubit.editar(tipo, model.id, novo.titulo, novo.valor, recorrente: novo.recorrente, parcelaAtual: novo.parcelaAtual, parcelasTotal: novo.parcelasTotal);
+  await cubit.editar(tipo, model.id, novo.titulo, novo.valor, recorrente: novo.recorrente, parcelaAtual: novo.parcelaAtual, parcelasTotal: novo.parcelasTotal, categoria: novo.categoria);
 }
 
 class _EditarItemDialog extends StatefulWidget {
   final ListasModel model;
   final bool mostrarRecorrente;
+  final CreateListCubit cubit;
 
-  const _EditarItemDialog({required this.model, required this.mostrarRecorrente});
+  const _EditarItemDialog({required this.model, required this.mostrarRecorrente, required this.cubit});
 
   @override
   State<_EditarItemDialog> createState() => _EditarItemDialogState();
@@ -71,6 +75,7 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
   late final TextEditingController _parcelasTotal;
   late bool _saida;
   late bool _recorrente;
+  late String _categoria;
   String? _erro;
 
   @override
@@ -80,6 +85,7 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
     _valor = TextEditingController(text: Formatervalor.paraCampo(widget.model.valor));
     _saida = widget.model.valor < 0;
     _recorrente = widget.model.recorrente;
+    _categoria = widget.model.categoria;
     _parcelaAtual = TextEditingController(text: widget.model.temParcelas ? '${widget.model.parcelaAtual}' : '');
     _parcelasTotal = TextEditingController(text: widget.model.temParcelas ? '${widget.model.parcelasTotal}' : '');
   }
@@ -120,7 +126,7 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
       return;
     }
 
-    Navigator.of(context).pop(widget.model.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total));
+    Navigator.of(context).pop(widget.model.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total, categoria: _categoria));
   }
 
   @override
@@ -135,6 +141,16 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
             TextField(
               controller: _titulo,
               decoration: const InputDecoration(labelText: 'Título'),
+            ),
+            const SizedBox(height: 12),
+            BlocBuilder<CreateListCubit, CreateListState>(
+              bloc: widget.cubit,
+              builder: (context, state) => CategoriaField(
+                valor: _categoria,
+                categorias: state.categorias ?? const <Categoria>[],
+                onChanged: (nome) => setState(() => _categoria = nome),
+                onCriar: widget.cubit.criarCategoria,
+              ),
             ),
             const SizedBox(height: 12),
             TextField(

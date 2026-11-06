@@ -15,8 +15,9 @@ class ListasModel extends Equatable {
   bool recorrente;
   int parcelaAtual;
   int parcelasTotal;
+  String categoria;
 
-  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0});
+  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0, this.categoria = ''});
 
   bool get temParcelas => parcelasTotal > 0;
 
@@ -30,7 +31,7 @@ class ListasModel extends Equatable {
   }
 
   @override
-  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal];
+  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal, categoria];
 
   ListasModel copyWith({
     String? titulo,
@@ -40,6 +41,7 @@ class ListasModel extends Equatable {
     bool? recorrente,
     int? parcelaAtual,
     int? parcelasTotal,
+    String? categoria,
   }) {
     return ListasModel(
       id: id ?? this.id,
@@ -49,6 +51,7 @@ class ListasModel extends Equatable {
       recorrente: recorrente ?? this.recorrente,
       parcelaAtual: parcelaAtual ?? this.parcelaAtual,
       parcelasTotal: parcelasTotal ?? this.parcelasTotal,
+      categoria: categoria ?? this.categoria,
     );
   }
 
@@ -61,6 +64,7 @@ class ListasModel extends Equatable {
       'recorrente': recorrente,
       'parcelaAtual': parcelaAtual,
       'parcelasTotal': parcelasTotal,
+      'categoria': categoria,
     };
   }
 
@@ -73,6 +77,7 @@ class ListasModel extends Equatable {
       recorrente: map['recorrente'] == true,
       parcelaAtual: map['parcelaAtual'] ?? 0,
       parcelasTotal: map['parcelasTotal'] ?? 0,
+      categoria: map['categoria'] ?? '',
     );
   }
 

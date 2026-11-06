@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
+import 'package:gastos_gerais_app_flutter/utils/cores.dart';
 import 'package:gastos_gerais_app_flutter/widgets/ItemListaDialogs.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,13 +20,6 @@ class ListaWidget extends StatefulWidget {
 }
 
 class _ListaWidgetState extends State<ListaWidget> {
-  static const Color _corTexto = Color(0xFF2C2C2A);
-  static const Color _corTextoSecundario = Color(0xFF5F5E5A);
-  static const Color _corIconeMudo = Color(0xFF888780);
-  static const Color _corBorda = Color(0x1F000000);
-  static const Color _corSomaFundo = Color(0xFFFAEEDA);
-  static const Color _corSomaIcone = Color(0xFFBA7517);
-
   /// Itens marcados para a soma temporária. Guarda só os ids, então
   /// editar ou apagar um item não deixa a soma com valor velho.
   final Set<String> _somaIds = {};
@@ -88,31 +83,37 @@ class _ListaWidgetState extends State<ListaWidget> {
     );
   }
 
-  Widget _resumo(String rotulo, String valor, Color corRotulo) {
+  Widget _resumo(String rotulo, String valor, Color corRotulo, AppCores cores) {
     return RichText(
       text: TextSpan(
         text: '$rotulo: ',
         style: TextStyle(fontSize: 16, color: corRotulo),
         children: <TextSpan>[
-          TextSpan(text: valor, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: Formatervalor.verificaSeENegativo(valor))),
+          TextSpan(text: valor, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: cores.valor(valor))),
         ],
       ),
     );
   }
 
-  Widget _linha(BuildContext context, CreateListCubit cubit, List<ListasModel> itens, int index) {
+  Widget _linha(BuildContext context, CreateListCubit cubit, List<ListasModel> itens, int index, List<Categoria> categorias) {
+    final cores = AppCores.of(context);
     final item = itens[index];
     final valor = Formatervalor.formaterForReal(item.valor);
     final marcado = _somaIds.contains(item.id);
     final ultima = index == itens.length - 1;
 
+    // O ícone da categoria aparece na frente do título. Sem ícone, mostra o nome embaixo.
+    final categoria = categorias.where((c) => c.nome == item.categoria).firstOrNull;
+    final icone = categoria?.icone ?? '';
+    final nomeEmbaixo = item.categoria.isNotEmpty && icone.isEmpty;
+
     return Material(
-      color: marcado ? _corSomaFundo : Colors.white,
+      color: marcado ? cores.somaFundo : cores.cartao,
       child: InkWell(
         onTap: () => _alternarSoma(item.id),
         child: Container(
           decoration: BoxDecoration(
-            border: ultima ? null : const Border(bottom: BorderSide(color: _corBorda, width: 0.5)),
+            border: ultima ? null : Border(bottom: BorderSide(color: cores.borda, width: 0.5)),
           ),
           padding: const EdgeInsets.only(left: 12),
           child: Row(
@@ -120,35 +121,47 @@ class _ListaWidgetState extends State<ListaWidget> {
               Icon(
                 marcado ? Icons.check_circle_outline : Icons.radio_button_unchecked,
                 size: 20,
-                color: marcado ? _corSomaIcone : _corIconeMudo,
+                color: marcado ? cores.somaIcone : cores.mudo,
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(
-                      child: Text(
-                        item.titulo,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.lato(fontSize: 14, color: _corTexto),
-                      ),
+                    Row(
+                      children: [
+                        if (icone.isNotEmpty) ...[
+                          Text(icone, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(
+                            item.titulo,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.lato(fontSize: 14, color: cores.texto),
+                          ),
+                        ),
+                        if (item.temParcelas) ...[
+                          const SizedBox(width: 6),
+                          Text('${item.parcelaAtual}/${item.parcelasTotal}', style: GoogleFonts.lato(fontSize: 12, color: cores.mudo)),
+                        ],
+                        if (item.recorrente) ...[
+                          const SizedBox(width: 4),
+                          Icon(Icons.repeat, size: 16, color: cores.mudo),
+                        ],
+                      ],
                     ),
-                    if (item.temParcelas) ...[
-                      const SizedBox(width: 6),
-                      Text('${item.parcelaAtual}/${item.parcelasTotal}', style: GoogleFonts.lato(fontSize: 12, color: _corIconeMudo)),
-                    ],
-                    if (item.recorrente) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.autorenew, size: 14, color: _corIconeMudo),
-                    ],
+                    if (nomeEmbaixo)
+                      Text(item.categoria, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.lato(fontSize: 12, color: cores.mudo)),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Text(valor, maxLines: 1, style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.w500, color: Formatervalor.verificaSeENegativo(valor))),
+              Text(valor, maxLines: 1, style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.w500, color: cores.valor(valor))),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20, color: _corTextoSecundario),
+                icon: Icon(Icons.more_vert, size: 20, color: cores.textoSecundario),
                 tooltip: 'Ações',
                 onSelected: (acao) {
                   if (acao == 'editar') editarItem(context, cubit, widget.tipo, item);
@@ -175,7 +188,9 @@ class _ListaWidgetState extends State<ListaWidget> {
     return BlocBuilder<CreateListCubit, CreateListState>(
       bloc: cubit,
       builder: (context, state) {
+        final cores = AppCores.of(context);
         final itens = _itens(state);
+        final categorias = state.categorias ?? const <Categoria>[];
         final itensSoma = itens.where((e) => _somaIds.contains(e.id)).toList();
 
         final total = Formatervalor.formaterForReal(itens.fold(0.0, (soma, e) => soma + e.valor));
@@ -207,8 +222,8 @@ class _ListaWidgetState extends State<ListaWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _resumo('TOTAL', total, Colors.black),
-                  if (itensSoma.isNotEmpty) _resumo('SOMA', totalSoma, Colors.orange),
+                  _resumo('TOTAL', total, cores.texto, cores),
+                  if (itensSoma.isNotEmpty) _resumo('SOMA', totalSoma, Colors.orange, cores),
                 ],
               ),
             const SizedBox(height: 12),
@@ -216,16 +231,16 @@ class _ListaWidgetState extends State<ListaWidget> {
               Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cores.cartao,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _corBorda, width: 0.5),
+                  border: Border.all(color: cores.borda, width: 0.5),
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
                   padding: EdgeInsets.zero,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: itens.length,
-                  itemBuilder: (context, index) => _linha(context, cubit, itens, index),
+                  itemBuilder: (context, index) => _linha(context, cubit, itens, index, categorias),
                 ),
               ),
           ],

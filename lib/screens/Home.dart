@@ -5,8 +5,11 @@ import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 import 'package:gastos_gerais_app_flutter/functions/parcelas.dart';
+import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
+import 'package:gastos_gerais_app_flutter/utils/cores.dart';
+import 'package:gastos_gerais_app_flutter/widgets/CategoriaField.dart';
 import 'package:gastos_gerais_app_flutter/widgets/TextInputWidget.dart';
 import 'package:gastos_gerais_app_flutter/widgets/VersionWidget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +34,7 @@ class _HomeState extends State<Home> {
   bool proxMesCheck = false;
   bool outrosCheck = false;
   bool recorrenteCheck = false;
+  String _categoria = '';
   final TextEditingController _controllerParcelaAtual = TextEditingController();
   final TextEditingController _controllerParcelasTotal = TextEditingController();
 
@@ -107,8 +111,9 @@ class _HomeState extends State<Home> {
     var listConvertMesAtual = prefs.getString('mesAtual') ?? '[]';
     var listConvertProxMes = prefs.getString('proxMes') ?? '[]';
     var listConvertOutros = prefs.getString('outros') ?? '[]';
+    var listConvertCategorias = prefs.getString('categorias') ?? '[]';
 
-    createListCubit.initMesAtual(listConvertMesAtual, listConvertProxMes, listConvertOutros);
+    createListCubit.initMesAtual(listConvertMesAtual, listConvertProxMes, listConvertOutros, listConvertCategorias);
   }
 
   @override
@@ -117,7 +122,7 @@ class _HomeState extends State<Home> {
       child: GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
         child: Scaffold(
-          backgroundColor: Colors.deepOrange[50],
+          backgroundColor: AppCores.of(context).fundo,
           body: Padding(
             padding: const EdgeInsets.all(15),
             child: SingleChildScrollView(
@@ -129,7 +134,7 @@ class _HomeState extends State<Home> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       const Align(alignment: Alignment.centerRight, child: BackupMenu()),
-                      const Icon(Icons.account_balance, color: Colors.black),
+                      Icon(Icons.account_balance, color: AppCores.of(context).texto),
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
                       Row(children: [
@@ -137,7 +142,14 @@ class _HomeState extends State<Home> {
                         const SizedBox(width: 40),
                         TextInputWidget(focusNode: focusValor, controller: state.controllerValor ?? _controllerValor, largura: 100, isValor: true, titulo: "Valor", typeInput: TextInputType.number),
                       ]),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 8),
+                      CategoriaField(
+                        valor: _categoria,
+                        categorias: state.categorias ?? const <Categoria>[],
+                        onChanged: (nome) => setState(() => _categoria = nome),
+                        onCriar: createListCubit.criarCategoria,
+                      ),
+                      const SizedBox(height: 12),
                       Wrap(children: [
                         Row(mainAxisSize: MainAxisSize.min, children: [
                           Checkbox(
@@ -149,7 +161,7 @@ class _HomeState extends State<Home> {
                               });
                             },
                           ),
-                          Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13, color: const Color.fromARGB(255, 9, 101, 177))),
+                          Text('ENTRADA', style: GoogleFonts.lato(fontSize: 13, color: AppCores.of(context).positivo)),
                         ]),
                         Row(mainAxisSize: MainAxisSize.min, children: [
                           Checkbox(
@@ -161,7 +173,7 @@ class _HomeState extends State<Home> {
                               });
                             },
                           ),
-                          Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13, color: Colors.red)),
+                          Text('SAÍDA', style: GoogleFonts.lato(fontSize: 13, color: AppCores.of(context).negativo)),
                         ]),
                         const Row(
                           mainAxisSize: MainAxisSize.max,
@@ -261,7 +273,7 @@ class _HomeState extends State<Home> {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(0, 15, 0, 0),
                         child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppCores.of(context).botao, foregroundColor: AppCores.of(context).botaoTexto),
                           onPressed: () {
                             if (!validarEntrada()) {
                               setState(() => error = true);
@@ -276,15 +288,15 @@ class _HomeState extends State<Home> {
                             final parcelas = _recorrenteAtivo ? _parcelas() : const ParcelasLidas();
 
                             if (mesAtualCheck) {
-                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total);
+                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total, categoria: _categoria);
                             }
 
                             if (proxMesCheck) {
-                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total);
+                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total, categoria: _categoria);
                             }
 
                             if (outrosCheck) {
-                              createListCubit.adicionar(TipoLista.outros, id.value, state.controllerTitulo!.text, valorNumerico);
+                              createListCubit.adicionar(TipoLista.outros, id.value, state.controllerTitulo!.text, valorNumerico, categoria: _categoria);
                             }
                             FocusScope.of(context).requestFocus(FocusNode());
                             state.controllerTitulo!.clear();
@@ -298,6 +310,7 @@ class _HomeState extends State<Home> {
                               proxMesCheck = false;
                               outrosCheck = false;
                               recorrenteCheck = false;
+                              _categoria = '';
                             });
                           },
                           child: const Icon(Icons.add),

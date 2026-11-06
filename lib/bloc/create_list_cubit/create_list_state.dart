@@ -5,21 +5,24 @@ class CreateListState extends Equatable {
   final List<ListasModel>? mesAtual;
   final List<ListasModel>? proxMes;
   final List<ListasModel>? outros;
+  final List<Categoria>? categorias;
   final TextEditingController? controllerTitulo;
   final TextEditingController? controllerValor;
 
-  const CreateListState({this.controllerTitulo, this.controllerValor, this.mesAtual, this.proxMes, this.outros});
+  const CreateListState({this.controllerTitulo, this.controllerValor, this.mesAtual, this.proxMes, this.outros, this.categorias});
 
   CreateListState copyWith({
     List<ListasModel>? mesAtual,
     List<ListasModel>? proxMes,
     List<ListasModel>? outros,
+    List<Categoria>? categorias,
     TextEditingController? controllerTitulo,
     TextEditingController? controllerValor,
   }) {
     return CreateListState(
       mesAtual: mesAtual ?? this.mesAtual,
       outros: outros ?? this.outros,
+      categorias: categorias ?? this.categorias,
       proxMes: proxMes ?? this.proxMes,
       controllerTitulo: controllerTitulo ?? this.controllerTitulo,
       controllerValor: controllerValor ?? this.controllerValor,
@@ -54,7 +57,7 @@ class CreateListState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [mesAtual, proxMes, outros, controllerTitulo, controllerValor];
+  List<Object?> get props => [mesAtual, proxMes, outros, categorias, controllerTitulo, controllerValor];
 }
 
 final class CreateListInitial extends CreateListState {}

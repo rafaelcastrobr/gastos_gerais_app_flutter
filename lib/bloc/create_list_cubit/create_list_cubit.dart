@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
+import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -58,10 +59,11 @@ class CreateListCubit extends Cubit<CreateListState> {
     emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: state.outros, controllerTitulo: controllerText, controllerValor: controllerValor));
   }
 
-  void initMesAtual(String mesAtual, String proxMes, String outros) async {
+  void initMesAtual(String mesAtual, String proxMes, String outros, [String categorias = '[]']) async {
     List<ListasModel> mesAtualConvert = [];
     List<ListasModel> proxMesConvert = [];
     List<ListasModel> outrosConvert = [];
+    List<Categoria> categoriasConvert = [];
 
     if (mesAtual.isNotEmpty) {
       var decodedListMesAtual = jsonDecode(mesAtual);
@@ -78,21 +80,28 @@ class CreateListCubit extends Cubit<CreateListState> {
       outrosConvert = decodedListOutros.map<ListasModel>((item) => ListasModel.fromJson(item)).toList();
     }
 
-    emit(CreateListState(mesAtual: mesAtualConvert, proxMes: proxMesConvert, outros: outrosConvert, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+    if (categorias.isNotEmpty) {
+      final decodedCategorias = jsonDecode(categorias);
+      if (decodedCategorias is List) {
+        categoriasConvert = decodedCategorias.map(Categoria.fromMap).whereType<Categoria>().toList();
+      }
+    }
+
+    emit(CreateListState(mesAtual: mesAtualConvert, proxMes: proxMesConvert, outros: outrosConvert, categorias: categoriasConvert, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
   }
 
   // ------------------------------------------------------ itens de uma lista
 
-  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0}) async {
-    final item = ListasModel(id: id, titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal);
+  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0, String categoria = ''}) async {
+    final item = ListasModel(id: id, titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal, categoria: categoria);
     await _atualizar(tipo, [item, ..._lista(tipo)]);
 
     if (recorrente && tipo == TipoLista.mesAtual) await _garantirNoProxMes(item);
   }
 
   /// Edita o item no lugar, mantendo a posição e o id.
-  Future<void> editar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0}) async {
-    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal) : e).toList();
+  Future<void> editar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0, String categoria = ''}) async {
+    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal, categoria: categoria) : e).toList();
     await _atualizar(tipo, lista);
 
     if (recorrente && tipo == TipoLista.mesAtual) {
@@ -150,16 +159,47 @@ class CreateListCubit extends Cubit<CreateListState> {
 
   // ----------------------------------------------------------------- backup
 
+  // -------------------------------------------------------------- categorias
+
+  Future<void> _salvarCategorias(List<Categoria> categorias) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('categorias', jsonEncode(categorias.map((c) => c.toMap()).toList()));
+  }
+
+  /// Cria uma categoria (sem repetir o nome, ignorando maiúsculas).
+  /// Devolve a categoria que ficou valendo, ou null se o nome estiver vazio.
+  Future<Categoria?> criarCategoria(String nome, String icone) async {
+    final limpo = nome.trim();
+    if (limpo.isEmpty) return null;
+
+    final categorias = [...?state.categorias];
+    final existentes = categorias.where((c) => c.nome.toLowerCase() == limpo.toLowerCase());
+    if (existentes.isNotEmpty) return existentes.first;
+
+    final nova = Categoria(nome: limpo, icone: icone.trim());
+    categorias.add(nova);
+
+    emit(state.copyWith(categorias: categorias));
+    await _salvarCategorias(categorias);
+    return nova;
+  }
+
+  // ----------------------------------------------------------------- backup
+
   String gerarBackup() {
-    return Backup.gerar(BackupDados(mesAtual: state.mesAtual ?? [], proxMes: state.proxMes ?? [], outros: state.outros ?? []));
+    return Backup.gerar(BackupDados(mesAtual: state.mesAtual ?? [], proxMes: state.proxMes ?? [], outros: state.outros ?? [], categorias: state.categorias ?? []));
   }
 
   /// Troca os dados atuais pelos do backup.
   Future<void> restaurarBackup(BackupDados dados) async {
-    emit(state.copyWith(mesAtual: dados.mesAtual, proxMes: dados.proxMes, outros: dados.outros));
+    // categorias: junta as atuais com as do backup (o backup vence se o nome for igual)
+    final categorias = {for (final c in [...?state.categorias, ...dados.categorias]) c.nome.toLowerCase(): c}.values.toList();
+
+    emit(state.copyWith(mesAtual: dados.mesAtual, proxMes: dados.proxMes, outros: dados.outros, categorias: categorias));
 
     await _salvar(TipoLista.mesAtual, dados.mesAtual);
     await _salvar(TipoLista.proxMes, dados.proxMes);
     await _salvar(TipoLista.outros, dados.outros);
+    await _salvarCategorias(categorias);
   }
 }

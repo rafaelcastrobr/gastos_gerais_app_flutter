@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 
 /// Conteúdo de um backup: as três listas do app.
@@ -7,8 +8,9 @@ class BackupDados {
   final List<ListasModel> mesAtual;
   final List<ListasModel> proxMes;
   final List<ListasModel> outros;
+  final List<Categoria> categorias;
 
-  const BackupDados({required this.mesAtual, required this.proxMes, required this.outros});
+  const BackupDados({required this.mesAtual, required this.proxMes, required this.outros, this.categorias = const []});
 
   int get total => mesAtual.length + proxMes.length + outros.length;
 }
@@ -26,6 +28,7 @@ class Backup {
       'mesAtual': dados.mesAtual.map((e) => e.toMap()).toList(),
       'proxMes': dados.proxMes.map((e) => e.toMap()).toList(),
       'outros': dados.outros.map((e) => e.toMap()).toList(),
+      'categorias': dados.categorias.map((c) => c.toMap()).toList(),
     };
     return jsonEncode(mapa);
   }
@@ -48,7 +51,16 @@ class Backup {
       mesAtual: _lerLista(bruto['mesAtual']),
       proxMes: _lerLista(bruto['proxMes']),
       outros: _lerLista(bruto['outros']),
+      categorias: _lerCategorias(bruto['categorias']),
     );
+  }
+
+  static List<Categoria> _lerCategorias(Object? bruto) {
+    if (bruto == null) return [];
+    if (bruto is! List) {
+      throw const FormatException('O backup tem uma lista de categorias inválida.');
+    }
+    return bruto.map(Categoria.fromMap).whereType<Categoria>().toList();
   }
 
   static List<ListasModel> _lerLista(Object? bruto) {
@@ -73,7 +85,8 @@ class Backup {
       }
 
       itens.add(ListasModel(id: id, titulo: titulo, valor: valor.toDouble(), iconEnum: icone is int ? icone : 0, recorrente: item['recorrente'] == true,
-          parcelaAtual: item['parcelaAtual'] is int ? item['parcelaAtual'] : 0, parcelasTotal: item['parcelasTotal'] is int ? item['parcelasTotal'] : 0));
+          parcelaAtual: item['parcelaAtual'] is int ? item['parcelaAtual'] : 0, parcelasTotal: item['parcelasTotal'] is int ? item['parcelasTotal'] : 0,
+          categoria: item['categoria'] is String ? item['categoria'] : ''));
     }
     return itens;
   }
