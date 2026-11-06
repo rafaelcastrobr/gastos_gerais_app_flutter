@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/functions/privacidade.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:gastos_gerais_app_flutter/utils/cores.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,7 +11,10 @@ class ResumoMes extends StatelessWidget {
   final List<ListasModel> itens;
   final bool filtrado;
 
-  const ResumoMes({super.key, required this.itens, this.filtrado = false});
+  /// Esconde os valores (e as cores que revelariam o sinal).
+  final bool ocultar;
+
+  const ResumoMes({super.key, required this.itens, this.filtrado = false, this.ocultar = false});
 
   BoxDecoration _caixa(AppCores cores) {
     return BoxDecoration(
@@ -67,16 +71,16 @@ class ResumoMes extends StatelessWidget {
             children: [
               _rotulo(filtrado ? 'SALDO · MÊS ATUAL (FILTRADO)' : 'SALDO · MÊS ATUAL', cores),
               const SizedBox(height: 4),
-              Text(saldoTexto, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.lato(fontSize: 28, fontWeight: FontWeight.bold, color: cores.valor(saldoTexto))),
+              Text(ocultar ? valorOculto : saldoTexto, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.lato(fontSize: 28, fontWeight: FontWeight.bold, color: ocultar ? cores.texto : cores.valor(saldoTexto))),
             ],
           ),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: _cartaoPequeno('ENTRADAS', Formatervalor.formaterForReal(entradas), cores.positivo, cores)),
+            Expanded(child: _cartaoPequeno('ENTRADAS', ocultar ? valorOculto : Formatervalor.formaterForReal(entradas), ocultar ? cores.texto : cores.positivo, cores)),
             const SizedBox(width: 10),
-            Expanded(child: _cartaoPequeno('SAÍDAS', Formatervalor.formaterForReal(saidas), cores.negativo, cores)),
+            Expanded(child: _cartaoPequeno('SAÍDAS', ocultar ? valorOculto : Formatervalor.formaterForReal(saidas), ocultar ? cores.texto : cores.negativo, cores)),
           ],
         ),
       ],

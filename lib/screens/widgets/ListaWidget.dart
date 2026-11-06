@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/filtro.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/functions/privacidade.dart';
 import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:gastos_gerais_app_flutter/utils/cores.dart';
@@ -18,7 +19,10 @@ class ListaWidget extends StatefulWidget {
   /// Nomes das categorias escolhidas no filtro ('' = sem categoria). Vazio = mostra tudo.
   final Set<String> filtro;
 
-  const ListaWidget({super.key, required this.tipo, required this.aoCopiar, this.filtro = const <String>{}});
+  /// Esconde os valores (e as cores que revelariam o sinal).
+  final bool ocultar;
+
+  const ListaWidget({super.key, required this.tipo, required this.aoCopiar, this.filtro = const <String>{}, this.ocultar = false});
 
   @override
   State<ListaWidget> createState() => _ListaWidgetState();
@@ -87,7 +91,7 @@ class _ListaWidgetState extends State<ListaWidget> {
         text: '$rotulo: ',
         style: TextStyle(fontSize: 16, color: corRotulo),
         children: <TextSpan>[
-          TextSpan(text: valor, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: cores.valor(valor))),
+          TextSpan(text: widget.ocultar ? valorOculto : valor, style: GoogleFonts.lato(fontWeight: FontWeight.bold, color: widget.ocultar ? cores.textoSecundario : cores.valor(valor))),
         ],
       ),
     );
@@ -157,7 +161,7 @@ class _ListaWidgetState extends State<ListaWidget> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(valor, maxLines: 1, style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.w500, color: cores.valor(valor))),
+              Text(widget.ocultar ? valorOculto : valor, maxLines: 1, style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.w500, color: widget.ocultar ? cores.textoSecundario : cores.valor(valor))),
               PopupMenuButton<String>(
                 icon: Icon(Icons.more_vert, size: 20, color: cores.textoSecundario),
                 tooltip: 'Ações',

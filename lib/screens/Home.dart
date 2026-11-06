@@ -34,12 +34,29 @@ class _HomeState extends State<Home> {
   int _intervaloLembrete = LembreteBackup.padraoDias;
   bool _lembreteDispensado = false;
 
+  /// O "olho": esconde saldo, totais e valores dos itens. Fica salvo para a próxima abertura.
+  bool _ocultar = false;
+
   @override
   void initState() {
     createListCubit = context.read<CreateListCubit>();
     listShared();
     _carregarLembrete();
+    _carregarOcultar();
     super.initState();
+  }
+
+  Future<void> _carregarOcultar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ocultar = prefs.getBool('ocultarValores') ?? false;
+    if (!mounted) return;
+    setState(() => _ocultar = ocultar);
+  }
+
+  Future<void> _alternarOcultar() async {
+    setState(() => _ocultar = !_ocultar);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('ocultarValores', _ocultar);
   }
 
   Future<void> _carregarLembrete() async {
@@ -95,7 +112,17 @@ class _HomeState extends State<Home> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Align(alignment: Alignment.centerRight, child: BackupMenu(aoMudarLembrete: _carregarLembrete)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            tooltip: _ocultar ? 'Mostrar valores' : 'Esconder valores',
+                            icon: Icon(_ocultar ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                            onPressed: _alternarOcultar,
+                          ),
+                          BackupMenu(aoMudarLembrete: _carregarLembrete),
+                        ],
+                      ),
                       Icon(Icons.account_balance, color: cores.texto),
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
@@ -111,18 +138,18 @@ class _HomeState extends State<Home> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      ResumoMes(itens: aplicarFiltro(state.mesAtual ?? [], filtro), filtrado: filtro.isNotEmpty),
+                      ResumoMes(itens: aplicarFiltro(state.mesAtual ?? [], filtro), filtrado: filtro.isNotEmpty, ocultar: _ocultar),
                       const SizedBox(height: 20),
                       FiltroCategorias(
                         categorias: state.categorias ?? const <Categoria>[],
                         selecionadas: filtro,
                         onChanged: (novo) => setState(() => _filtro = novo),
                       ),
-                      ListaWidget(tipo: TipoLista.mesAtual, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro),
+                      ListaWidget(tipo: TipoLista.mesAtual, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro, ocultar: _ocultar),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.proxMes, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro),
+                      ListaWidget(tipo: TipoLista.proxMes, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro, ocultar: _ocultar),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.outros, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro),
+                      ListaWidget(tipo: TipoLista.outros, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro, ocultar: _ocultar),
                       const SizedBox(height: 40),
                       const Center(
                         child: Row(
