@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
+import 'package:gastos_gerais_app_flutter/functions/filtro.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
@@ -11,12 +12,13 @@ import 'package:google_fonts/google_fonts.dart';
 /// Uma das três listas do app (Mês Atual, Próx. Mês ou Outros).
 class ListaWidget extends StatefulWidget {
   final TipoLista tipo;
-  final Function funcOnTop;
+  /// Chamado ao escolher "Copiar" no menu do item (abre o formulário já preenchido).
+  final ValueChanged<ListasModel> aoCopiar;
 
   /// Nomes das categorias escolhidas no filtro ('' = sem categoria). Vazio = mostra tudo.
   final Set<String> filtro;
 
-  const ListaWidget({super.key, required this.tipo, required this.funcOnTop, this.filtro = const <String>{}});
+  const ListaWidget({super.key, required this.tipo, required this.aoCopiar, this.filtro = const <String>{}});
 
   @override
   State<ListaWidget> createState() => _ListaWidgetState();
@@ -53,15 +55,6 @@ class _ListaWidgetState extends State<ListaWidget> {
     setState(() {
       if (!_somaIds.add(id)) _somaIds.remove(id);
     });
-  }
-
-  /// Leva título e valor do item para o formulário do topo.
-  void _copiarParaFormulario(CreateListCubit cubit, ListasModel item) {
-    final contTitulo = TextEditingController(text: item.titulo);
-    final contValor = TextEditingController(text: Formatervalor.paraCampo(item.valor));
-
-    cubit.initControllerText(contTitulo, contValor);
-    widget.funcOnTop.call();
   }
 
   void _confirmarPassarParaMesAtual(BuildContext context, CreateListCubit cubit, bool filtroAtivo) {
@@ -170,7 +163,7 @@ class _ListaWidgetState extends State<ListaWidget> {
                 tooltip: 'Ações',
                 onSelected: (acao) {
                   if (acao == 'editar') editarItem(context, cubit, widget.tipo, item);
-                  if (acao == 'copiar') _copiarParaFormulario(cubit, item);
+                  if (acao == 'copiar') widget.aoCopiar(item);
                   if (acao == 'apagar') confirmarApagar(context, cubit, widget.tipo, item, todos.indexWhere((e) => e.id == item.id));
                 },
                 itemBuilder: (_) => const [
@@ -196,7 +189,7 @@ class _ListaWidgetState extends State<ListaWidget> {
         final cores = AppCores.of(context);
         final todos = _itens(state);
         final filtroAtivo = widget.filtro.isNotEmpty;
-        final itens = filtroAtivo ? todos.where((e) => widget.filtro.contains(e.categoria)).toList() : todos;
+        final itens = aplicarFiltro(todos, widget.filtro);
         final categorias = state.categorias ?? const <Categoria>[];
         final itensSoma = itens.where((e) => _somaIds.contains(e.id)).toList();
 
