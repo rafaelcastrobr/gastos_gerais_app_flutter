@@ -72,7 +72,7 @@ class Backup {
         throw const FormatException('O backup tem um item inválido.');
       }
 
-      itens.add(ListasModel(id: id, titulo: titulo, valor: valor.toDouble(), iconEnum: icone is int ? icone : 0));
+      itens.add(ListasModel(id: id, titulo: titulo, valor: valor.toDouble(), iconEnum: icone is int ? icone : 0, recorrente: item['recorrente'] == true));
     }
     return itens;
   }

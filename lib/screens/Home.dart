@@ -30,6 +30,7 @@ class _HomeState extends State<Home> {
   bool mesAtualCheck = false;
   bool proxMesCheck = false;
   bool outrosCheck = false;
+  bool recorrenteCheck = false;
 
   bool entradaCheck = false;
   bool saidaCheck = false;
@@ -190,11 +191,19 @@ class _HomeState extends State<Home> {
                                 outrosCheck = !outrosCheck;
                                 proxMesCheck = false;
                                 mesAtualCheck = false;
+                                recorrenteCheck = false;
                               });
                             },
                           ),
                           Text('OUTROS', style: GoogleFonts.lato()),
-                        ])
+                        ]),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Checkbox(
+                            value: recorrenteCheck && (mesAtualCheck || proxMesCheck),
+                            onChanged: (mesAtualCheck || proxMesCheck) ? (value) => setState(() => recorrenteCheck = !recorrenteCheck) : null,
+                          ),
+                          Text('RECORRENTE', style: GoogleFonts.lato(fontSize: 13)),
+                        ]),
                       ]),
                       if (error)
                         ValueListenableBuilder(
@@ -223,11 +232,11 @@ class _HomeState extends State<Home> {
                             Guid id = Guid.generate();
 
                             if (mesAtualCheck) {
-                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico);
+                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck);
                             }
 
                             if (proxMesCheck) {
-                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico);
+                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck);
                             }
 
                             if (outrosCheck) {
@@ -242,6 +251,7 @@ class _HomeState extends State<Home> {
                               mesAtualCheck = false;
                               proxMesCheck = false;
                               outrosCheck = false;
+                              recorrenteCheck = false;
                             });
                           },
                           child: const Icon(Icons.add),

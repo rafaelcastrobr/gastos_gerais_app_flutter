@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,15 +83,34 @@ class CreateListCubit extends Cubit<CreateListState> {
 
   // ------------------------------------------------------ itens de uma lista
 
-  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor) {
-    final lista = [ListasModel(id: id, titulo: titulo, valor: valor), ..._lista(tipo)];
-    return _atualizar(tipo, lista);
+  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false}) async {
+    final item = ListasModel(id: id, titulo: titulo, valor: valor, recorrente: recorrente);
+    await _atualizar(tipo, [item, ..._lista(tipo)]);
+
+    if (recorrente && tipo == TipoLista.mesAtual) await _garantirNoProxMes(item);
   }
 
   /// Edita o item no lugar, mantendo a posição e o id.
-  Future<void> editar(TipoLista tipo, String id, String titulo, double valor) {
-    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor) : e).toList();
-    return _atualizar(tipo, lista);
+  Future<void> editar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false}) async {
+    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente) : e).toList();
+    await _atualizar(tipo, lista);
+
+    if (recorrente && tipo == TipoLista.mesAtual) {
+      await _garantirNoProxMes(lista.firstWhere((e) => e.id == id));
+    }
+  }
+
+  /// Um item recorrente do mês atual também precisa estar no próximo mês.
+  /// Só cria a cópia se ainda não houver um recorrente com o mesmo título lá.
+  Future<void> _garantirNoProxMes(ListasModel item) {
+    final prox = _lista(TipoLista.proxMes);
+    final titulo = item.titulo.trim().toLowerCase();
+
+    final jaTem = prox.any((e) => e.recorrente && e.titulo.trim().toLowerCase() == titulo);
+    if (jaTem) return Future.value();
+
+    final copia = item.copyWith(id: Guid.generate().value);
+    return _atualizar(TipoLista.proxMes, [copia, ...prox]);
   }
 
   Future<void> remover(TipoLista tipo, String id) {
@@ -109,9 +129,14 @@ class CreateListCubit extends Cubit<CreateListState> {
   }
 
   /// Passa tudo do próximo mês para o mês atual.
+  /// Os itens recorrentes continuam no próximo mês, como uma cópia nova.
   Future<void> sendMesAtual() async {
-    final mesAtual = [...?state.mesAtual, ...?state.proxMes];
-    final proxMes = <ListasModel>[];
+    final prox = [...?state.proxMes];
+    final mesAtual = [...?state.mesAtual, ...prox];
+    final proxMes = [
+      for (final e in prox)
+        if (e.recorrente) e.copyWith(id: Guid.generate().value),
+    ];
 
     emit(state.copyWith(mesAtual: mesAtual, proxMes: proxMes));
 

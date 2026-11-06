@@ -44,18 +44,19 @@ Future<void> confirmarApagar(BuildContext context, CreateListCubit cubit, TipoLi
 Future<void> editarItem(BuildContext context, CreateListCubit cubit, TipoLista tipo, ListasModel model) async {
   final novo = await showDialog<ListasModel>(
     context: context,
-    builder: (_) => _EditarItemDialog(model: model),
+    builder: (_) => _EditarItemDialog(model: model, mostrarRecorrente: tipo != TipoLista.outros),
   );
 
   if (novo == null) return;
 
-  await cubit.editar(tipo, model.id, novo.titulo, novo.valor);
+  await cubit.editar(tipo, model.id, novo.titulo, novo.valor, recorrente: novo.recorrente);
 }
 
 class _EditarItemDialog extends StatefulWidget {
   final ListasModel model;
+  final bool mostrarRecorrente;
 
-  const _EditarItemDialog({required this.model});
+  const _EditarItemDialog({required this.model, required this.mostrarRecorrente});
 
   @override
   State<_EditarItemDialog> createState() => _EditarItemDialogState();
@@ -65,6 +66,7 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
   late final TextEditingController _titulo;
   late final TextEditingController _valor;
   late bool _saida;
+  late bool _recorrente;
   String? _erro;
 
   @override
@@ -73,6 +75,7 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
     _titulo = TextEditingController(text: widget.model.titulo);
     _valor = TextEditingController(text: Formatervalor.paraCampo(widget.model.valor));
     _saida = widget.model.valor < 0;
+    _recorrente = widget.model.recorrente;
   }
 
   @override
@@ -102,7 +105,7 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
       return;
     }
 
-    Navigator.of(context).pop(widget.model.copyWith(titulo: titulo, valor: valor));
+    Navigator.of(context).pop(widget.model.copyWith(titulo: titulo, valor: valor, recorrente: widget.mostrarRecorrente && _recorrente));
   }
 
   @override
@@ -134,6 +137,14 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
               selected: {_saida},
               onSelectionChanged: (selecionado) => setState(() => _saida = selecionado.first),
             ),
+            if (widget.mostrarRecorrente)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: _recorrente,
+                onChanged: (valor) => setState(() => _recorrente = valor ?? false),
+                title: const Text('Recorrente (volta todo mês)'),
+              ),
             if (_erro != null) ...[
               const SizedBox(height: 12),
               Text(_erro!, style: const TextStyle(fontSize: 14, color: Colors.red)),

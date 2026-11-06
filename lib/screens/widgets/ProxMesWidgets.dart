@@ -119,6 +119,7 @@ class _ProxMesWidgetState extends State<ProxMesWidget> {
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
                       children: [
+                        if (listaProxMes[index].recorrente) const Icon(Icons.autorenew, size: 16, color: Colors.grey),
                         Text('${listaProxMes[index].titulo.toUpperCase()} * ',
                             style: GoogleFonts.lato(fontSize: 16, color: listaProxMesSoma.contains(listaProxMes[index]) ? Colors.orange : Colors.black)),
                         Text(valor, style: GoogleFonts.lato(fontSize: 16, color: Formatervalor.verificaSeENegativo(valor))),

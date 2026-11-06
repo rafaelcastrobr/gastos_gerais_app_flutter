@@ -106,6 +106,7 @@ class _MesAtualWidgetsState extends State<MesAtualWidgets> {
                         icon: const Icon(Icons.edit, color: Colors.green)),
                     Row(
                       children: [
+                        if (listaMesAtual[index].recorrente) const Icon(Icons.autorenew, size: 16, color: Colors.grey),
                         Text('${listaMesAtual[index].titulo.toUpperCase()} * ',
                             style: GoogleFonts.lato(fontSize: 16, color: listaMesAtualSoma.contains(listaMesAtual[index]) ? Colors.orange : Colors.black)),
                         Text(valor, style: GoogleFonts.lato(fontSize: 16, color: Formatervalor.verificaSeENegativo(valor))),
