@@ -4,9 +4,7 @@ import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
-import 'package:gastos_gerais_app_flutter/screens/widgets/MesAtualWidgets.dart';
-import 'package:gastos_gerais_app_flutter/screens/widgets/OutrosWidgets.dart';
-import 'package:gastos_gerais_app_flutter/screens/widgets/ProxMesWidgets.dart';
+import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
 import 'package:gastos_gerais_app_flutter/widgets/TextInputWidget.dart';
 import 'package:gastos_gerais_app_flutter/widgets/VersionWidget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -258,11 +256,11 @@ class _HomeState extends State<Home> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      MesAtualWidgets(funcOnTop: _scrollToTop),
+                      ListaWidget(tipo: TipoLista.mesAtual, funcOnTop: _scrollToTop),
                       const SizedBox(height: 20),
-                      ProxMesWidget(funcOnTop: _scrollToTop),
+                      ListaWidget(tipo: TipoLista.proxMes, funcOnTop: _scrollToTop),
                       const SizedBox(height: 20),
-                      OutrosWidgets(funcOnTop: _scrollToTop),
+                      ListaWidget(tipo: TipoLista.outros, funcOnTop: _scrollToTop),
                       const SizedBox(height: 40),
                       const Center(
                         child: Row(
