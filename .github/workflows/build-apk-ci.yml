@@ -54,6 +54,15 @@ jobs:
       - name: Renomear APK
         run: cp build/app/outputs/flutter-apk/app-release.apk gastos-gerais-ci.apk
 
+      # Só para conferência: a assinatura do APK e a da chave fixa devem ser iguais
+      - name: Mostrar assinatura do APK
+        run: |
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          echo "APK:"
+          "$APKSIGNER" verify --print-certs gastos-gerais-ci.apk 2>&1 | grep -i "SHA-256" || true
+          echo "Chave fixa:"
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android 2>&1 | grep -i "SHA256" || true
+
       - uses: actions/upload-artifact@v4
         with:
           name: gastos-gerais-ci-apk
