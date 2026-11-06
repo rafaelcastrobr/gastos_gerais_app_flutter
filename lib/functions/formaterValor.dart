@@ -10,6 +10,11 @@ class Formatervalor {
     return valorFormatado;
   }
 
+  /// Valor sem o símbolo da moeda e sem sinal, para preencher um campo de texto (ex.: 1.234,50).
+  static String paraCampo(double valor) {
+    return NumberFormat.currency(locale: 'pt_BR', symbol: '').format(valor.abs()).trim();
+  }
+
   static double limparString2(String valor, bool entrada, bool saida) {
     String valorFormatado = valor.trim();
     String valorComPonto = valorFormatado.replaceAll(',', '.');

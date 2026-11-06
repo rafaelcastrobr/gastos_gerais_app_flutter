@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
+import 'package:gastos_gerais_app_flutter/widgets/ItemListaDialogs.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OutrosWidgets extends StatefulWidget {
@@ -30,6 +31,8 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
       bloc: createListCubit,
       builder: (context, state) {
         final listaOutros = state.outros ?? [];
+        // mantém só os itens que ainda existem, já com os valores atualizados
+        listaOutrosSoma = [for (final e in listaOutros) if (listaOutrosSoma.any((s) => s.id == e.id)) e];
 
         var total = Formatervalor.formaterForReal(listaOutros.fold(0.0, (previousValue, element) => previousValue + element.valor));
         var totalSoma = Formatervalor.formaterForReal(listaOutrosSoma.fold(0.0, (previousValue, element) => previousValue + element.valor));
@@ -85,7 +88,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                   children: [
                     IconButton(
                         onPressed: () {
-                          showConfirmationDeleteDialog(context, createListCubit, listaOutros[index]);
+                          confirmarApagar(context, createListCubit, TipoLista.outros, listaOutros[index], index);
                         },
                         icon: const Icon(Icons.delete, color: Colors.red)),
                     IconButton(
@@ -102,7 +105,7 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                         icon: const Icon(Icons.copy, color: Colors.blue)),
                     IconButton(
                         onPressed: () {
-                          showConfirmationEditDialog(context, createListCubit, listaOutros[index], widget.funcOnTop);
+                          editarItem(context, createListCubit, TipoLista.outros, listaOutros[index]);
 
                         },
                         icon: const Icon(Icons.edit, color: Colors.green)),
@@ -121,69 +124,6 @@ class _OutrosWidgetsState extends State<OutrosWidgets> {
                   ],
                 );
               },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  static showConfirmationDeleteDialog(BuildContext context, CreateListCubit cubit, ListasModel model) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Apagar ${model.titulo} ?'),
-          content: Text('Valor ${Formatervalor.formaterForReal(model.valor)}'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                cubit.deleteTaskOutros(model.id);
-                Navigator.of(context).pop(); // Fecha o diálogo
-              },
-              child: const Text('Sim'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-              },
-              child: const Text('Não'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-  
-
-  static showConfirmationEditDialog(BuildContext context, CreateListCubit cubit, ListasModel model, Function funcOnTop) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Editar ${model.titulo} ?'),
-          content: Text('Valor ${Formatervalor.formaterForReal(model.valor)}'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                TextEditingController contText = TextEditingController();
-                TextEditingController contValor = TextEditingController();
-                contText.text = model.titulo;
-                contValor.text = model.valor.toString().replaceFirst('-', '').trim();
-
-                cubit.initControllerText(contText, contValor);
-                cubit.deleteTaskOutros(model.id);
-
-                funcOnTop.call();
-                Navigator.of(context).pop(); // Fecha o diálogo
-              },
-              child: const Text('Sim'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-              },
-              child: const Text('Não'),
             ),
           ],
         );

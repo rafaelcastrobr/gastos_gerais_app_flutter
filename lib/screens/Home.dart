@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/MesAtualWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/OutrosWidgets.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ProxMesWidgets.dart';
@@ -116,6 +117,7 @@ class _HomeState extends State<Home> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
+                      const Align(alignment: Alignment.centerRight, child: BackupMenu()),
                       const Icon(Icons.account_balance, color: Colors.black),
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
@@ -221,15 +223,15 @@ class _HomeState extends State<Home> {
                             Guid id = Guid.generate();
 
                             if (mesAtualCheck) {
-                              createListCubit.addTaskMesAtual(id.value, state.controllerTitulo!.text, valorNumerico);
+                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico);
                             }
 
                             if (proxMesCheck) {
-                              createListCubit.addTaskProxMes(id.value, state.controllerTitulo!.text, valorNumerico);
+                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico);
                             }
 
                             if (outrosCheck) {
-                              createListCubit.addTaskOutros(id.value, state.controllerTitulo!.text, valorNumerico);
+                              createListCubit.adicionar(TipoLista.outros, id.value, state.controllerTitulo!.text, valorNumerico);
                             }
                             FocusScope.of(context).requestFocus(FocusNode());
                             state.controllerTitulo!.clear();

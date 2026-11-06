@@ -3,14 +3,55 @@ import 'dart:convert';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:gastos_gerais_app_flutter/functions/backup.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'create_list_state.dart';
 
+/// As três listas do app. O `name` de cada uma é a chave usada no SharedPreferences
+/// (mesAtual, proxMes, outros), a mesma de sempre, então os dados salvos continuam valendo.
+enum TipoLista { mesAtual, proxMes, outros }
+
 class CreateListCubit extends Cubit<CreateListState> {
   CreateListCubit() : super(CreateListInitial());
+
+  // ---------------------------------------------------------------- helpers
+
+  /// Cópia da lista atual, que pode ser alterada à vontade.
+  List<ListasModel> _lista(TipoLista tipo) {
+    switch (tipo) {
+      case TipoLista.mesAtual:
+        return [...?state.mesAtual];
+      case TipoLista.proxMes:
+        return [...?state.proxMes];
+      case TipoLista.outros:
+        return [...?state.outros];
+    }
+  }
+
+  CreateListState _comLista(TipoLista tipo, List<ListasModel> lista) {
+    switch (tipo) {
+      case TipoLista.mesAtual:
+        return state.copyWith(mesAtual: lista);
+      case TipoLista.proxMes:
+        return state.copyWith(proxMes: lista);
+      case TipoLista.outros:
+        return state.copyWith(outros: lista);
+    }
+  }
+
+  Future<void> _salvar(TipoLista tipo, List<ListasModel> lista) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(tipo.name, jsonEncode(lista));
+  }
+
+  Future<void> _atualizar(TipoLista tipo, List<ListasModel> lista) async {
+    emit(_comLista(tipo, lista));
+    await _salvar(tipo, lista);
+  }
+
+  // ------------------------------------------------------------------- init
 
   void initControllerText(TextEditingController controllerText, TextEditingController controllerValor) {
     emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: state.outros, controllerTitulo: controllerText, controllerValor: controllerValor));
@@ -39,154 +80,57 @@ class CreateListCubit extends Cubit<CreateListState> {
     emit(CreateListState(mesAtual: mesAtualConvert, proxMes: proxMesConvert, outros: outrosConvert, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
   }
 
-  void addTaskMesAtual(String id, String text, double value) async {
-    final mesAtual = [ListasModel(id: id, titulo: text, valor: value), ...?state.mesAtual];
+  // ------------------------------------------------------ itens de uma lista
 
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvert = jsonEncode(mesAtual);
-    prefs.setString('mesAtual', listConvert);
-
-    emit(CreateListState(mesAtual: mesAtual, proxMes: state.proxMes, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor) {
+    final lista = [ListasModel(id: id, titulo: titulo, valor: valor), ..._lista(tipo)];
+    return _atualizar(tipo, lista);
   }
 
-  void addTaskProxMes(String id, String text, double value) async {
-    final proxMes = [ListasModel(id: id, titulo: text, valor: value), ...?state.proxMes];
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvert = jsonEncode(proxMes);
-    prefs.setString('proxMes', listConvert);
-
-    emit(CreateListState(proxMes: proxMes, mesAtual: state.mesAtual, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+  /// Edita o item no lugar, mantendo a posição e o id.
+  Future<void> editar(TipoLista tipo, String id, String titulo, double valor) {
+    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor) : e).toList();
+    return _atualizar(tipo, lista);
   }
 
-  void addTaskOutros(String id, String text, double value) async {
-    final outros = [ListasModel(id: id, titulo: text, valor: value), ...?state.outros];
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvert = jsonEncode(outros);
-    prefs.setString('outros', listConvert);
-
-    emit(CreateListState(outros: outros, mesAtual: state.mesAtual, proxMes: state.proxMes, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+  Future<void> remover(TipoLista tipo, String id) {
+    final lista = _lista(tipo)..removeWhere((e) => e.id == id);
+    return _atualizar(tipo, lista);
   }
 
-  void editTaskMesAtual(String id, String titulo, double value) {
-    var newListMesAtual = [...?state.mesAtual];
+  /// Desfaz um `remover`: devolve o item para a posição em que estava.
+  Future<void> restaurar(TipoLista tipo, ListasModel item, int indice) {
+    final lista = _lista(tipo);
+    if (lista.any((e) => e.id == item.id)) return Future.value();
 
-    var editItem = newListMesAtual.where((element) => element.id == id).first;
-
-    editItem.titulo = titulo;
-    editItem.valor = value;
-
-    final mesAtual = state.copyWith(mesAtual: newListMesAtual);
-
-    emit(mesAtual);
+    final posicao = indice < 0 ? 0 : (indice > lista.length ? lista.length : indice);
+    lista.insert(posicao, item);
+    return _atualizar(tipo, lista);
   }
 
-  void editTaskProxAtual(String id, String titulo, double value) {
-    var newListProxMes = [...?state.proxMes];
+  /// Passa tudo do próximo mês para o mês atual.
+  Future<void> sendMesAtual() async {
+    final mesAtual = [...?state.mesAtual, ...?state.proxMes];
+    final proxMes = <ListasModel>[];
 
-    var editItem = newListProxMes.where((element) => element.id == id).first;
+    emit(state.copyWith(mesAtual: mesAtual, proxMes: proxMes));
 
-    editItem.titulo = titulo;
-    editItem.valor = value;
-
-    final proxMes = state.copyWith(proxMes: newListProxMes);
-
-    emit(proxMes);
+    await _salvar(TipoLista.mesAtual, mesAtual);
+    await _salvar(TipoLista.proxMes, proxMes);
   }
 
-  void editTaskOutros(String id, String titulo, double value) {
-    var newListOutros = [...?state.mesAtual];
+  // ----------------------------------------------------------------- backup
 
-    var editItem = newListOutros.where((element) => element.id == id).first;
-
-    editItem.titulo = titulo;
-    editItem.valor = value;
-
-    final outros = state.copyWith(mesAtual: newListOutros);
-
-    emit(outros);
+  String gerarBackup() {
+    return Backup.gerar(BackupDados(mesAtual: state.mesAtual ?? [], proxMes: state.proxMes ?? [], outros: state.outros ?? []));
   }
 
-  deleteTaskMesAtual(String id) async {
-    var newListMesAtual = [...?state.mesAtual];
+  /// Troca os dados atuais pelos do backup.
+  Future<void> restaurarBackup(BackupDados dados) async {
+    emit(state.copyWith(mesAtual: dados.mesAtual, proxMes: dados.proxMes, outros: dados.outros));
 
-    var listaAtualizada = newListMesAtual
-      ..removeWhere(
-        (element) => element.id == id,
-      );
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvert = jsonEncode(listaAtualizada);
-    prefs.setString('mesAtual', listConvert);
-
-    emit(state.copyWith(mesAtual: listaAtualizada, proxMes: state.proxMes, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
-  }
-
-  void deleteTaskProxMes(String id) async {
-    var newListProxMes = [...?state.proxMes];
-
-    var listaAtualizada = newListProxMes
-      ..removeWhere(
-        (element) => element.id == id,
-      );
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvert = jsonEncode(listaAtualizada);
-    prefs.setString('proxMes', listConvert);
-
-    emit(state.copyWith(mesAtual: state.mesAtual, proxMes: listaAtualizada, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
-  }
-
-  void deleteTaskOutros(String id) async {
-    var newListOutros = [...?state.outros];
-
-    var listaAtualizada = newListOutros
-      ..removeWhere(
-        (element) => element.id == id,
-      );
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvert = jsonEncode(listaAtualizada);
-    prefs.setString('outros', listConvert);
-
-    emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: listaAtualizada, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
-  }
-
-  void sendMesAtual() async {
-    final mesAtual = [
-      ...?state.mesAtual,
-      ...?state.proxMes,
-    ];
-    List<ListasModel> proxMesConvert = [];
-
-
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    var listConvertProxMes = jsonEncode(proxMesConvert);
-    prefs.setString('proxMes', listConvertProxMes);
-
-    var listConvertMesAtual = jsonEncode(mesAtual);
-    prefs.setString('mesAtual', listConvertMesAtual);
-
-    emit(CreateListState(proxMes: proxMesConvert, mesAtual: mesAtual, outros: state.outros, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
-  }
-
-  @override
-  CreateListState? fromJson(Map<String, dynamic> json) {
-    final initialData = CreateListState.fromMap(json);
-    emit(initialData);
-    return CreateListState.fromMap(json);
-  }
-
-  @override
-  Map<String, dynamic>? toJson(CreateListState state) {
-    return state.toMap();
+    await _salvar(TipoLista.mesAtual, dados.mesAtual);
+    await _salvar(TipoLista.proxMes, dados.proxMes);
+    await _salvar(TipoLista.outros, dados.outros);
   }
 }
