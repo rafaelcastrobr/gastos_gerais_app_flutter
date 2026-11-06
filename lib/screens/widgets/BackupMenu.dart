@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
+import 'package:gastos_gerais_app_flutter/functions/lembrete_backup.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -14,13 +15,17 @@ import 'package:share_plus/share_plus.dart';
 /// salvo como arquivo pelo menu de compartilhar do Android (Drive, WhatsApp...),
 /// copiado para a área de transferência, ou lido de volta de um arquivo ou do texto colado.
 class BackupMenu extends StatelessWidget {
-  const BackupMenu({super.key});
+  /// Chamado depois de mudar o intervalo do lembrete, para a tela reavaliar o aviso.
+  final VoidCallback? aoMudarLembrete;
+
+  const BackupMenu({super.key, this.aoMudarLembrete});
 
   Future<void> _copiar(BuildContext context) async {
     final cubit = context.read<CreateListCubit>();
     final messenger = ScaffoldMessenger.of(context);
 
     await Clipboard.setData(ClipboardData(text: cubit.gerarBackup()));
+    await LembreteBackup.marcarFeito();
 
     messenger.showSnackBar(
       const SnackBar(content: Text('Backup copiado. Cole em um lugar seguro (notas, mensagem para você...).')),
@@ -29,7 +34,7 @@ class BackupMenu extends StatelessWidget {
 
   /// Gera o arquivo do backup e abre o menu de compartilhar do Android.
   /// Lá é só escolher o Drive e salvar.
-  Future<void> _salvarArquivo(BuildContext context) async {
+  static Future<void> salvarArquivo(BuildContext context) async {
     final cubit = context.read<CreateListCubit>();
     final messenger = ScaffoldMessenger.of(context);
 
@@ -42,13 +47,30 @@ class BackupMenu extends StatelessWidget {
       final arquivo = File('${pasta.path}/$nome');
       await arquivo.writeAsString(cubit.gerarBackup());
 
-      await Share.shareXFiles([XFile(arquivo.path, mimeType: 'application/json')], subject: 'Backup Gastos Gerais');
+      final resultado = await Share.shareXFiles([XFile(arquivo.path, mimeType: 'application/json')], subject: 'Backup Gastos Gerais');
+
+      // se a pessoa fechou o menu de compartilhar sem escolher nada, não conta como backup feito
+      if (resultado.status.name != 'dismissed') await LembreteBackup.marcarFeito();
     } catch (_) {
       messenger.showSnackBar(const SnackBar(content: Text('Não foi possível gerar o arquivo de backup.')));
     }
   }
 
   /// Abre o seletor de arquivos do celular (que mostra o Drive) e restaura o backup escolhido.
+  Future<void> _ajustarLembrete(BuildContext context) async {
+    final atual = await LembreteBackup.intervalo();
+    if (!context.mounted) return;
+
+    final novo = await showDialog<int>(
+      context: context,
+      builder: (_) => _LembreteDialog(dias: atual),
+    );
+    if (novo == null) return;
+
+    await LembreteBackup.definirIntervalo(novo);
+    aoMudarLembrete?.call();
+  }
+
   Future<void> _restaurarDeArquivo(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
 
@@ -131,16 +153,59 @@ class BackupMenu extends StatelessWidget {
       icon: const Icon(Icons.more_vert),
       tooltip: 'Backup',
       onSelected: (acao) {
-        if (acao == 'salvar') _salvarArquivo(context);
+        if (acao == 'salvar') salvarArquivo(context);
         if (acao == 'copiar') _copiar(context);
         if (acao == 'arquivo') _restaurarDeArquivo(context);
         if (acao == 'colar') _restaurarColando(context);
+        if (acao == 'lembrete') _ajustarLembrete(context);
       },
       itemBuilder: (_) => const [
         PopupMenuItem<String>(value: 'salvar', child: Text('Salvar backup (Drive...)')),
         PopupMenuItem<String>(value: 'copiar', child: Text('Copiar backup (texto)')),
         PopupMenuItem<String>(value: 'arquivo', child: Text('Restaurar de um arquivo')),
         PopupMenuItem<String>(value: 'colar', child: Text('Restaurar colando o texto')),
+        PopupMenuItem<String>(value: 'lembrete', child: Text('Lembrete de backup')),
+      ],
+    );
+  }
+}
+
+/// Escolhe de quantos em quantos dias o app lembra de salvar um backup (7 a 15).
+class _LembreteDialog extends StatefulWidget {
+  final int dias;
+
+  const _LembreteDialog({required this.dias});
+
+  @override
+  State<_LembreteDialog> createState() => _LembreteDialogState();
+}
+
+class _LembreteDialogState extends State<_LembreteDialog> {
+  late int _dias = widget.dias;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Lembrete de backup'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Lembrar a cada $_dias dias'),
+          Slider(
+            value: _dias.toDouble(),
+            min: LembreteBackup.minDias.toDouble(),
+            max: LembreteBackup.maxDias.toDouble(),
+            divisions: LembreteBackup.maxDias - LembreteBackup.minDias,
+            label: '$_dias dias',
+            onChanged: (valor) => setState(() => _dias = valor.round()),
+          ),
+          const Text('Você escolhe de 7 a 15 dias.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.of(context).pop(_dias), child: const Text('Salvar')),
       ],
     );
   }

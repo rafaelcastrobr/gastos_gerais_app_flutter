@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/filtro.dart';
+import 'package:gastos_gerais_app_flutter/functions/lembrete_backup.dart';
 import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
 import 'package:gastos_gerais_app_flutter/utils/cores.dart';
 import 'package:gastos_gerais_app_flutter/widgets/FiltroCategorias.dart';
 import 'package:gastos_gerais_app_flutter/widgets/FormularioItem.dart';
+import 'package:gastos_gerais_app_flutter/widgets/LembreteBackupCard.dart';
 import 'package:gastos_gerais_app_flutter/widgets/ResumoMes.dart';
 import 'package:gastos_gerais_app_flutter/widgets/VersionWidget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,11 +28,32 @@ class _HomeState extends State<Home> {
   /// Categorias escolhidas no filtro ('' = sem categoria). Vazio = mostra tudo.
   Set<String> _filtro = {};
 
+  /// Lembrete de backup: dias desde o último, de quantos em quantos dias lembrar,
+  /// e se a pessoa tocou em "Depois" nesta abertura do app.
+  int _diasSemBackup = 0;
+  int _intervaloLembrete = LembreteBackup.padraoDias;
+  bool _lembreteDispensado = false;
+
   @override
   void initState() {
     createListCubit = context.read<CreateListCubit>();
     listShared();
+    _carregarLembrete();
     super.initState();
+  }
+
+  Future<void> _carregarLembrete() async {
+    final dias = await LembreteBackup.diasSemBackup();
+    final intervalo = await LembreteBackup.intervalo();
+    if (!mounted) return;
+    setState(() {
+      _diasSemBackup = dias;
+      _intervaloLembrete = intervalo;
+    });
+  }
+
+  bool _temDados(CreateListState state) {
+    return (state.mesAtual?.isNotEmpty ?? false) || (state.proxMes?.isNotEmpty ?? false) || (state.outros?.isNotEmpty ?? false);
   }
 
   void listShared() async {
@@ -68,11 +91,22 @@ class _HomeState extends State<Home> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Align(alignment: Alignment.centerRight, child: BackupMenu()),
+                      Align(alignment: Alignment.centerRight, child: BackupMenu(aoMudarLembrete: _carregarLembrete)),
                       Icon(Icons.account_balance, color: cores.texto),
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
                       const SizedBox(height: 12),
+                      if (_diasSemBackup >= _intervaloLembrete && !_lembreteDispensado && _temDados(state)) ...[
+                        LembreteBackupCard(
+                          dias: _diasSemBackup,
+                          onSalvar: () async {
+                            await BackupMenu.salvarArquivo(context);
+                            await _carregarLembrete();
+                          },
+                          onDepois: () => setState(() => _lembreteDispensado = true),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       ResumoMes(itens: aplicarFiltro(state.mesAtual ?? [], _filtro), filtrado: _filtro.isNotEmpty),
                       const SizedBox(height: 20),
                       FiltroCategorias(
