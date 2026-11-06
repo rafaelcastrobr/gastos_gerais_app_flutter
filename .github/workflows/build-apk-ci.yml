@@ -1,11 +1,8 @@
 name: Build APK (CI)
 
+# Só roda quando for disparado manualmente (Actions > Run workflow)
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - ci/build-apk
 
 jobs:
   build:
