@@ -31,20 +31,24 @@ jobs:
 
       # Usa uma chave de assinatura fixa, para o APK poder atualizar por cima do anterior.
       # A chave vem do segredo DEBUG_KEYSTORE_BASE64 ou do arquivo android/ci-debug.keystore.
+      # O Gradle é configurado aqui para assinar com ela (só neste build; o app original não muda).
       - name: Usar chave de assinatura fixa
         env:
           KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
         run: |
-          mkdir -p ~/.android
           if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+            echo "$KEYSTORE_B64" | base64 -d > android/ci-signing.keystore
             echo "Chave fixa vinda do segredo"
           elif [ -f android/ci-debug.keystore ]; then
-            cp android/ci-debug.keystore ~/.android/debug.keystore
+            cp android/ci-debug.keystore android/ci-signing.keystore
             echo "Chave fixa vinda do repositório"
           else
             echo "Sem chave fixa: este APK não atualiza por cima do anterior"
+            exit 0
           fi
+          sed -i 's|signingConfig = signingConfigs.debug|signingConfig = signingConfigs.ci|' android/app/build.gradle
+          sed -i 's|^    buildTypes {|    signingConfigs {\n        ci {\n            storeFile rootProject.file("ci-signing.keystore")\n            storePassword "android"\n            keyAlias "androiddebugkey"\n            keyPassword "android"\n        }\n    }\n\n    buildTypes {|' android/app/build.gradle
+          sed -n '/signingConfigs {/,/^}/p' android/app/build.gradle
 
       - run: flutter pub get
       # Cada build ganha um número maior que o anterior (o do GitHub), senão o Android
@@ -54,14 +58,20 @@ jobs:
       - name: Renomear APK
         run: cp build/app/outputs/flutter-apk/app-release.apk gastos-gerais-ci.apk
 
-      # Só para conferência: a assinatura do APK e a da chave fixa devem ser iguais
-      - name: Mostrar assinatura do APK
+      # Confere se o APK saiu mesmo assinado com a chave fixa; se não, o build falha
+      - name: Conferir assinatura do APK
         run: |
-          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
-          echo "APK:"
-          "$APKSIGNER" verify --print-certs gastos-gerais-ci.apk 2>&1 | grep -i "SHA-256" || true
-          echo "Chave fixa:"
-          keytool -list -v -keystore ~/.android/debug.keystore -storepass android 2>&1 | grep -i "SHA256" || true
+          if [ ! -f android/ci-signing.keystore ]; then echo "Sem chave fixa, nada a conferir"; exit 0; fi
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | sort -V | tail -1)
+          APK_SHA=$("$APKSIGNER" verify --print-certs gastos-gerais-ci.apk | grep -i "certificate SHA-256" | head -1 | sed 's/.*: //' | tr -d ': ' | tr 'A-F' 'a-f')
+          KEY_SHA=$(keytool -list -v -keystore android/ci-signing.keystore -storepass android | grep -i "SHA256" | head -1 | sed 's/.*SHA256: //' | tr -d ': ' | tr 'A-F' 'a-f')
+          echo "APK:   $APK_SHA"
+          echo "Chave: $KEY_SHA"
+          if [ -z "$APK_SHA" ] || [ "$APK_SHA" != "$KEY_SHA" ]; then
+            echo "ERRO: o APK não foi assinado com a chave fixa"
+            exit 1
+          fi
+          echo "Assinatura confere"
 
       - uses: actions/upload-artifact@v4
         with:
