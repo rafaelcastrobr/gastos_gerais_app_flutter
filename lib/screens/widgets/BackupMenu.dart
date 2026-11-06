@@ -1,11 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-/// Menu com "Copiar backup" e "Restaurar backup".
-/// O backup é um texto: fica na área de transferência e pode ser colado em qualquer lugar.
+/// Menu de backup. O backup é um texto JSON, que pode ir de quatro jeitos:
+/// salvo como arquivo pelo menu de compartilhar do Android (Drive, WhatsApp...),
+/// copiado para a área de transferência, ou lido de volta de um arquivo ou do texto colado.
 class BackupMenu extends StatelessWidget {
   const BackupMenu({super.key});
 
@@ -20,15 +27,79 @@ class BackupMenu extends StatelessWidget {
     );
   }
 
-  Future<void> _restaurar(BuildContext context) async {
+  /// Gera o arquivo do backup e abre o menu de compartilhar do Android.
+  /// Lá é só escolher o Drive e salvar.
+  Future<void> _salvarArquivo(BuildContext context) async {
     final cubit = context.read<CreateListCubit>();
     final messenger = ScaffoldMessenger.of(context);
 
+    try {
+      final agora = DateTime.now();
+      String dois(int n) => n.toString().padLeft(2, '0');
+      final nome = 'gastos-gerais-backup-${agora.year}-${dois(agora.month)}-${dois(agora.day)}.json';
+
+      final pasta = await getTemporaryDirectory();
+      final arquivo = File('${pasta.path}/$nome');
+      await arquivo.writeAsString(cubit.gerarBackup());
+
+      await Share.shareXFiles([XFile(arquivo.path, mimeType: 'application/json')], subject: 'Backup Gastos Gerais');
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Não foi possível gerar o arquivo de backup.')));
+    }
+  }
+
+  /// Abre o seletor de arquivos do celular (que mostra o Drive) e restaura o backup escolhido.
+  Future<void> _restaurarDeArquivo(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    FilePickerResult? escolha;
+    try {
+      escolha = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Não foi possível abrir o seletor de arquivos.')));
+      return;
+    }
+    if (escolha == null || escolha.files.isEmpty) return;
+
+    final bytes = escolha.files.single.bytes;
+    if (bytes == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('Não consegui ler esse arquivo.')));
+      return;
+    }
+
+    String texto;
+    try {
+      texto = utf8.decode(bytes);
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Esse arquivo não é um backup do app.')));
+      return;
+    }
+
+    BackupDados dados;
+    try {
+      dados = Backup.ler(texto);
+    } on FormatException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
+    if (!context.mounted) return;
+
+    await _confirmarERestaurar(context, dados);
+  }
+
+  Future<void> _restaurarColando(BuildContext context) async {
     final dados = await showDialog<BackupDados>(
       context: context,
       builder: (_) => const _ColarBackupDialog(),
     );
     if (dados == null || !context.mounted) return;
+
+    await _confirmarERestaurar(context, dados);
+  }
+
+  Future<void> _confirmarERestaurar(BuildContext context, BackupDados dados) async {
+    final cubit = context.read<CreateListCubit>();
+    final messenger = ScaffoldMessenger.of(context);
 
     final confirmou = await showDialog<bool>(
       context: context,
@@ -60,12 +131,16 @@ class BackupMenu extends StatelessWidget {
       icon: const Icon(Icons.more_vert),
       tooltip: 'Backup',
       onSelected: (acao) {
+        if (acao == 'salvar') _salvarArquivo(context);
         if (acao == 'copiar') _copiar(context);
-        if (acao == 'restaurar') _restaurar(context);
+        if (acao == 'arquivo') _restaurarDeArquivo(context);
+        if (acao == 'colar') _restaurarColando(context);
       },
       itemBuilder: (_) => const [
-        PopupMenuItem<String>(value: 'copiar', child: Text('Copiar backup')),
-        PopupMenuItem<String>(value: 'restaurar', child: Text('Restaurar backup')),
+        PopupMenuItem<String>(value: 'salvar', child: Text('Salvar backup (Drive...)')),
+        PopupMenuItem<String>(value: 'copiar', child: Text('Copiar backup (texto)')),
+        PopupMenuItem<String>(value: 'arquivo', child: Text('Restaurar de um arquivo')),
+        PopupMenuItem<String>(value: 'colar', child: Text('Restaurar colando o texto')),
       ],
     );
   }
