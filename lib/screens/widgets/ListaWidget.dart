@@ -13,7 +13,10 @@ class ListaWidget extends StatefulWidget {
   final TipoLista tipo;
   final Function funcOnTop;
 
-  const ListaWidget({super.key, required this.tipo, required this.funcOnTop});
+  /// Nomes das categorias escolhidas no filtro ('' = sem categoria). Vazio = mostra tudo.
+  final Set<String> filtro;
+
+  const ListaWidget({super.key, required this.tipo, required this.funcOnTop, this.filtro = const <String>{}});
 
   @override
   State<ListaWidget> createState() => _ListaWidgetState();
@@ -61,13 +64,15 @@ class _ListaWidgetState extends State<ListaWidget> {
     widget.funcOnTop.call();
   }
 
-  void _confirmarPassarParaMesAtual(BuildContext context, CreateListCubit cubit) {
+  void _confirmarPassarParaMesAtual(BuildContext context, CreateListCubit cubit, bool filtroAtivo) {
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
           title: const Text('Passar o Próx. Mês para o Mês Atual?'),
-          content: const Text('Os itens recorrentes continuam no Próx. Mês.'),
+          content: Text(filtroAtivo
+              ? 'Passa todos os itens, até os escondidos pelo filtro. Os itens recorrentes continuam no Próx. Mês.'
+              : 'Os itens recorrentes continuam no Próx. Mês.'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -95,7 +100,7 @@ class _ListaWidgetState extends State<ListaWidget> {
     );
   }
 
-  Widget _linha(BuildContext context, CreateListCubit cubit, List<ListasModel> itens, int index, List<Categoria> categorias) {
+  Widget _linha(BuildContext context, CreateListCubit cubit, List<ListasModel> itens, int index, List<Categoria> categorias, List<ListasModel> todos) {
     final cores = AppCores.of(context);
     final item = itens[index];
     final valor = Formatervalor.formaterForReal(item.valor);
@@ -166,7 +171,7 @@ class _ListaWidgetState extends State<ListaWidget> {
                 onSelected: (acao) {
                   if (acao == 'editar') editarItem(context, cubit, widget.tipo, item);
                   if (acao == 'copiar') _copiarParaFormulario(cubit, item);
-                  if (acao == 'apagar') confirmarApagar(context, cubit, widget.tipo, item, index);
+                  if (acao == 'apagar') confirmarApagar(context, cubit, widget.tipo, item, todos.indexWhere((e) => e.id == item.id));
                 },
                 itemBuilder: (_) => const [
                   PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
@@ -189,7 +194,9 @@ class _ListaWidgetState extends State<ListaWidget> {
       bloc: cubit,
       builder: (context, state) {
         final cores = AppCores.of(context);
-        final itens = _itens(state);
+        final todos = _itens(state);
+        final filtroAtivo = widget.filtro.isNotEmpty;
+        final itens = filtroAtivo ? todos.where((e) => widget.filtro.contains(e.categoria)).toList() : todos;
         final categorias = state.categorias ?? const <Categoria>[];
         final itensSoma = itens.where((e) => _somaIds.contains(e.id)).toList();
 
@@ -202,9 +209,9 @@ class _ListaWidgetState extends State<ListaWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(_titulo, style: GoogleFonts.lato(fontSize: 25, color: Colors.grey)),
-                if (widget.tipo == TipoLista.proxMes && itens.isNotEmpty)
+                if (widget.tipo == TipoLista.proxMes && todos.isNotEmpty)
                   TextButton(
-                    onPressed: () => _confirmarPassarParaMesAtual(context, cubit),
+                    onPressed: () => _confirmarPassarParaMesAtual(context, cubit, filtroAtivo),
                     child: const Row(
                       children: [Text('Mês Atual'), SizedBox(width: 10), Icon(Icons.send)],
                     ),
@@ -217,7 +224,8 @@ class _ListaWidgetState extends State<ListaWidget> {
               ],
             ),
             const Divider(),
-            if (itens.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
+            if (todos.isEmpty) Text('Adicione valores', style: GoogleFonts.lato(fontSize: 20)),
+            if (todos.isNotEmpty && itens.isEmpty) Text('Nenhum item nas categorias escolhidas', style: GoogleFonts.lato(fontSize: 16)),
             if (itens.isNotEmpty)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -240,7 +248,7 @@ class _ListaWidgetState extends State<ListaWidget> {
                   padding: EdgeInsets.zero,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: itens.length,
-                  itemBuilder: (context, index) => _linha(context, cubit, itens, index, categorias),
+                  itemBuilder: (context, index) => _linha(context, cubit, itens, index, categorias, todos),
                 ),
               ),
           ],

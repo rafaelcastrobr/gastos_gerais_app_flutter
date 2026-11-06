@@ -10,6 +10,7 @@ import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
 import 'package:gastos_gerais_app_flutter/utils/cores.dart';
 import 'package:gastos_gerais_app_flutter/widgets/CategoriaField.dart';
+import 'package:gastos_gerais_app_flutter/widgets/FiltroCategorias.dart';
 import 'package:gastos_gerais_app_flutter/widgets/TextInputWidget.dart';
 import 'package:gastos_gerais_app_flutter/widgets/VersionWidget.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,6 +36,7 @@ class _HomeState extends State<Home> {
   bool outrosCheck = false;
   bool recorrenteCheck = false;
   String _categoria = '';
+  Set<String> _filtro = {};
   final TextEditingController _controllerParcelaAtual = TextEditingController();
   final TextEditingController _controllerParcelasTotal = TextEditingController();
 
@@ -317,11 +319,16 @@ class _HomeState extends State<Home> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.mesAtual, funcOnTop: _scrollToTop),
+                      FiltroCategorias(
+                        categorias: state.categorias ?? const <Categoria>[],
+                        selecionadas: _filtro,
+                        onChanged: (novo) => setState(() => _filtro = novo),
+                      ),
+                      ListaWidget(tipo: TipoLista.mesAtual, funcOnTop: _scrollToTop, filtro: _filtro),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.proxMes, funcOnTop: _scrollToTop),
+                      ListaWidget(tipo: TipoLista.proxMes, funcOnTop: _scrollToTop, filtro: _filtro),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.outros, funcOnTop: _scrollToTop),
+                      ListaWidget(tipo: TipoLista.outros, funcOnTop: _scrollToTop, filtro: _filtro),
                       const SizedBox(height: 40),
                       const Center(
                         child: Row(
