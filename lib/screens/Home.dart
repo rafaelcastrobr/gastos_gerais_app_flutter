@@ -73,7 +73,7 @@ class _HomeState extends State<Home> {
     return (state.mesAtual?.isNotEmpty ?? false) || (state.proxMes?.isNotEmpty ?? false) || (state.outros?.isNotEmpty ?? false);
   }
 
-  void listShared() async {
+  Future<void> listShared() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var listConvertMesAtual = prefs.getString('mesAtual') ?? '[]';
@@ -81,7 +81,12 @@ class _HomeState extends State<Home> {
     var listConvertOutros = prefs.getString('outros') ?? '[]';
     var listConvertCategorias = prefs.getString('categorias') ?? '[]';
 
-    createListCubit.initMesAtual(listConvertMesAtual, listConvertProxMes, listConvertOutros, listConvertCategorias);
+    try {
+      await createListCubit.initMesAtual(listConvertMesAtual, listConvertProxMes, listConvertOutros, listConvertCategorias);
+    } catch (_) {
+      // dados salvos ilegíveis: abre com as listas vazias em vez de ficar carregando para sempre
+      await createListCubit.initMesAtual('[]', '[]', '[]', '[]');
+    }
   }
 
   @override
@@ -93,11 +98,19 @@ class _HomeState extends State<Home> {
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
         child: Scaffold(
           backgroundColor: cores.fundo,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => abrirFormulario(context, createListCubit),
-            backgroundColor: cores.botao,
-            foregroundColor: cores.botaoTexto,
-            child: const Icon(Icons.add),
+          // o botão só aparece depois que os dados salvos foram lidos
+          floatingActionButton: BlocBuilder<CreateListCubit, CreateListState>(
+            bloc: createListCubit,
+            buildWhen: (anterior, atual) => (anterior.mesAtual == null) != (atual.mesAtual == null),
+            builder: (context, state) {
+              if (state.mesAtual == null) return const SizedBox.shrink();
+              return FloatingActionButton(
+                onPressed: () => abrirFormulario(context, createListCubit),
+                backgroundColor: cores.botao,
+                foregroundColor: cores.botaoTexto,
+                child: const Icon(Icons.add),
+              );
+            },
           ),
           body: Padding(
             padding: const EdgeInsets.all(15),
@@ -105,6 +118,25 @@ class _HomeState extends State<Home> {
               child: BlocBuilder<CreateListCubit, CreateListState>(
                 bloc: createListCubit,
                 builder: (context, state) {
+                  // enquanto os dados salvos estão sendo lidos, mostra a tela de carregamento
+                  if (state.mesAtual == null) {
+                    return SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.account_balance, size: 48, color: cores.texto),
+                            const SizedBox(height: 12),
+                            Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 22, color: cores.texto)),
+                            const SizedBox(height: 24),
+                            const CircularProgressIndicator(),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
                   // categorias apagadas ou renomeadas saem do filtro
                   final nomes = (state.categorias ?? const <Categoria>[]).map((c) => c.nome).toSet();
                   final filtro = _filtro.where((n) => n.isEmpty || nomes.contains(n)).toSet();

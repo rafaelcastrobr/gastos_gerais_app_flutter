@@ -59,7 +59,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     emit(state.copyWith(mesAtual: state.mesAtual, proxMes: state.proxMes, outros: state.outros, controllerTitulo: controllerText, controllerValor: controllerValor));
   }
 
-  void initMesAtual(String mesAtual, String proxMes, String outros, [String categorias = '[]']) async {
+  Future<void> initMesAtual(String mesAtual, String proxMes, String outros, [String categorias = '[]']) async {
     List<ListasModel> mesAtualConvert = [];
     List<ListasModel> proxMesConvert = [];
     List<ListasModel> outrosConvert = [];
