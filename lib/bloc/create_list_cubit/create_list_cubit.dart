@@ -184,6 +184,53 @@ class CreateListCubit extends Cubit<CreateListState> {
     return nova;
   }
 
+  /// Troca o nome e/ou o ícone de uma categoria. Os itens que usam a categoria
+  /// passam para o novo nome. Devolve uma mensagem de erro, ou null se deu certo.
+  Future<String?> editarCategoria(String nomeAntigo, String novoNome, String novoIcone) async {
+    final nome = novoNome.trim();
+    if (nome.isEmpty) return 'O nome não pode ficar vazio.';
+
+    final categorias = [...?state.categorias];
+    final jaExiste = categorias.any((c) => c.nome != nomeAntigo && c.nome.toLowerCase() == nome.toLowerCase());
+    if (jaExiste) return 'Já existe uma categoria com esse nome.';
+
+    final novas = categorias.map((c) => c.nome == nomeAntigo ? Categoria(nome: nome, icone: novoIcone.trim()) : c).toList();
+
+    List<ListasModel> troca(List<ListasModel>? lista) {
+      return (lista ?? []).map((e) => e.categoria == nomeAntigo ? e.copyWith(categoria: nome) : e).toList();
+    }
+
+    final mesAtual = troca(state.mesAtual);
+    final proxMes = troca(state.proxMes);
+    final outros = troca(state.outros);
+
+    emit(state.copyWith(mesAtual: mesAtual, proxMes: proxMes, outros: outros, categorias: novas));
+    await _salvar(TipoLista.mesAtual, mesAtual);
+    await _salvar(TipoLista.proxMes, proxMes);
+    await _salvar(TipoLista.outros, outros);
+    await _salvarCategorias(novas);
+    return null;
+  }
+
+  /// Apaga a categoria. Os itens que usavam ela ficam sem categoria.
+  Future<void> apagarCategoria(String nome) async {
+    final novas = (state.categorias ?? []).where((c) => c.nome != nome).toList();
+
+    List<ListasModel> limpa(List<ListasModel>? lista) {
+      return (lista ?? []).map((e) => e.categoria == nome ? e.copyWith(categoria: '') : e).toList();
+    }
+
+    final mesAtual = limpa(state.mesAtual);
+    final proxMes = limpa(state.proxMes);
+    final outros = limpa(state.outros);
+
+    emit(state.copyWith(mesAtual: mesAtual, proxMes: proxMes, outros: outros, categorias: novas));
+    await _salvar(TipoLista.mesAtual, mesAtual);
+    await _salvar(TipoLista.proxMes, proxMes);
+    await _salvar(TipoLista.outros, outros);
+    await _salvarCategorias(novas);
+  }
+
   // ----------------------------------------------------------------- backup
 
   String gerarBackup() {

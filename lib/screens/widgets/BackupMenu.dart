@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
 import 'package:gastos_gerais_app_flutter/functions/lembrete_backup.dart';
+import 'package:gastos_gerais_app_flutter/screens/CategoriasScreen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -151,8 +152,9 @@ class BackupMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert),
-      tooltip: 'Backup',
+      tooltip: 'Mais opções',
       onSelected: (acao) {
+        if (acao == 'categorias') Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CategoriasScreen()));
         if (acao == 'salvar') salvarArquivo(context);
         if (acao == 'copiar') _copiar(context);
         if (acao == 'arquivo') _restaurarDeArquivo(context);
@@ -160,6 +162,8 @@ class BackupMenu extends StatelessWidget {
         if (acao == 'lembrete') _ajustarLembrete(context);
       },
       itemBuilder: (_) => const [
+        PopupMenuItem<String>(value: 'categorias', child: Text('Categorias')),
+        PopupMenuDivider(),
         PopupMenuItem<String>(value: 'salvar', child: Text('Salvar backup (Drive...)')),
         PopupMenuItem<String>(value: 'copiar', child: Text('Copiar backup (texto)')),
         PopupMenuItem<String>(value: 'arquivo', child: Text('Restaurar de um arquivo')),

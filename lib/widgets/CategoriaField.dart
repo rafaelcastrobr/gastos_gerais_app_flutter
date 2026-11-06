@@ -55,16 +55,18 @@ class CategoriaField extends StatelessWidget {
   }
 }
 
-/// Pergunta o nome e o ícone da nova categoria. Devolve null se cancelar.
-Future<Categoria?> pedirNovaCategoria(BuildContext context) {
+/// Pergunta o nome e o ícone da categoria (nova, ou a que está sendo editada). Devolve null se cancelar.
+Future<Categoria?> pedirNovaCategoria(BuildContext context, {Categoria? editar}) {
   return showDialog<Categoria>(
     context: context,
-    builder: (_) => const _NovaCategoriaDialog(),
+    builder: (_) => _NovaCategoriaDialog(inicial: editar),
   );
 }
 
 class _NovaCategoriaDialog extends StatefulWidget {
-  const _NovaCategoriaDialog();
+  final Categoria? inicial;
+
+  const _NovaCategoriaDialog({this.inicial});
 
   @override
   State<_NovaCategoriaDialog> createState() => _NovaCategoriaDialogState();
@@ -73,8 +75,8 @@ class _NovaCategoriaDialog extends StatefulWidget {
 class _NovaCategoriaDialogState extends State<_NovaCategoriaDialog> {
   static const List<String> _sugestoes = ['🟠', '🟣', '🔴', '🔵', '🟢', '🟡', '❤️', '💡', '🚌', '💰', '🛒', '🍔', '🏠', '🐶'];
 
-  final TextEditingController _nome = TextEditingController();
-  final TextEditingController _icone = TextEditingController();
+  late final TextEditingController _nome = TextEditingController(text: widget.inicial?.nome ?? '');
+  late final TextEditingController _icone = TextEditingController(text: widget.inicial?.icone ?? '');
 
   @override
   void dispose() {
@@ -95,7 +97,7 @@ class _NovaCategoriaDialogState extends State<_NovaCategoriaDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Nova categoria'),
+      title: Text(widget.inicial == null ? 'Nova categoria' : 'Editar categoria'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -130,7 +132,7 @@ class _NovaCategoriaDialogState extends State<_NovaCategoriaDialog> {
       ),
       actions: <Widget>[
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-        TextButton(onPressed: _criar, child: const Text('Criar')),
+        TextButton(onPressed: _criar, child: Text(widget.inicial == null ? 'Criar' : 'Salvar')),
       ],
     );
   }

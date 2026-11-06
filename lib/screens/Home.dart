@@ -88,6 +88,10 @@ class _HomeState extends State<Home> {
               child: BlocBuilder<CreateListCubit, CreateListState>(
                 bloc: createListCubit,
                 builder: (context, state) {
+                  // categorias apagadas ou renomeadas saem do filtro
+                  final nomes = (state.categorias ?? const <Categoria>[]).map((c) => c.nome).toSet();
+                  final filtro = _filtro.where((n) => n.isEmpty || nomes.contains(n)).toSet();
+
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
@@ -107,18 +111,18 @@ class _HomeState extends State<Home> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      ResumoMes(itens: aplicarFiltro(state.mesAtual ?? [], _filtro), filtrado: _filtro.isNotEmpty),
+                      ResumoMes(itens: aplicarFiltro(state.mesAtual ?? [], filtro), filtrado: filtro.isNotEmpty),
                       const SizedBox(height: 20),
                       FiltroCategorias(
                         categorias: state.categorias ?? const <Categoria>[],
-                        selecionadas: _filtro,
+                        selecionadas: filtro,
                         onChanged: (novo) => setState(() => _filtro = novo),
                       ),
-                      ListaWidget(tipo: TipoLista.mesAtual, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: _filtro),
+                      ListaWidget(tipo: TipoLista.mesAtual, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.proxMes, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: _filtro),
+                      ListaWidget(tipo: TipoLista.proxMes, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro),
                       const SizedBox(height: 20),
-                      ListaWidget(tipo: TipoLista.outros, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: _filtro),
+                      ListaWidget(tipo: TipoLista.outros, aoCopiar: (item) => abrirFormulario(context, createListCubit, copiaDe: item), filtro: filtro),
                       const SizedBox(height: 40),
                       const Center(
                         child: Row(
