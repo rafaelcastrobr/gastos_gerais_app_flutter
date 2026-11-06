@@ -24,6 +24,14 @@ jobs:
           channel: stable
           cache: true
 
+      # Troca a identidade do app só neste build, para instalar ao lado do app original
+      - name: Trocar nome e applicationId
+        run: |
+          sed -i 's|applicationId = "com.example.gastos_gerais_app_flutter"|applicationId = "com.example.gastos_gerais_app_flutter.ci"|' android/app/build.gradle
+          sed -i 's|android:label="Gastos Gerais"|android:label="Gastos Gerais CI"|' android/app/src/main/AndroidManifest.xml
+          grep -n 'applicationId' android/app/build.gradle
+          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+
       - run: flutter pub get
       - run: flutter build apk --release
 
