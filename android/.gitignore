@@ -11,3 +11,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Chave de debug só do app de teste do CI (não é a do app original)
+!ci-debug.keystore
