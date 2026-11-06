@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cores da tela de abertura (splash) no modo claro; iguais às do app -->
+    <color name="splash_fundo">#FFFBE9E7</color>
+    <color name="splash_icone">#FF2C2C2A</color>
+</resources>
