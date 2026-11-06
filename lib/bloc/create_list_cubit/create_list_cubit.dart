@@ -83,16 +83,16 @@ class CreateListCubit extends Cubit<CreateListState> {
 
   // ------------------------------------------------------ itens de uma lista
 
-  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false}) async {
-    final item = ListasModel(id: id, titulo: titulo, valor: valor, recorrente: recorrente);
+  Future<void> adicionar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0}) async {
+    final item = ListasModel(id: id, titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal);
     await _atualizar(tipo, [item, ..._lista(tipo)]);
 
     if (recorrente && tipo == TipoLista.mesAtual) await _garantirNoProxMes(item);
   }
 
   /// Edita o item no lugar, mantendo a posição e o id.
-  Future<void> editar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false}) async {
-    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente) : e).toList();
+  Future<void> editar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0}) async {
+    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal) : e).toList();
     await _atualizar(tipo, lista);
 
     if (recorrente && tipo == TipoLista.mesAtual) {
@@ -109,7 +109,9 @@ class CreateListCubit extends Cubit<CreateListState> {
     final jaTem = prox.any((e) => e.recorrente && e.titulo.trim().toLowerCase() == titulo);
     if (jaTem) return Future.value();
 
-    final copia = item.copyWith(id: Guid.generate().value);
+    final copia = item.proximoMes(Guid.generate().value);
+    if (copia == null) return Future.value();
+
     return _atualizar(TipoLista.proxMes, [copia, ...prox]);
   }
 
@@ -129,14 +131,16 @@ class CreateListCubit extends Cubit<CreateListState> {
   }
 
   /// Passa tudo do próximo mês para o mês atual.
-  /// Os itens recorrentes continuam no próximo mês, como uma cópia nova.
+  /// Os itens recorrentes continuam no próximo mês, como uma cópia nova
+  /// (com a parcela seguinte, até chegar na última).
   Future<void> sendMesAtual() async {
     final prox = [...?state.proxMes];
     final mesAtual = [...?state.mesAtual, ...prox];
-    final proxMes = [
-      for (final e in prox)
-        if (e.recorrente) e.copyWith(id: Guid.generate().value),
-    ];
+    final proxMes = <ListasModel>[];
+    for (final e in prox) {
+      final proximo = e.proximoMes(Guid.generate().value);
+      if (proximo != null) proxMes.add(proximo);
+    }
 
     emit(state.copyWith(mesAtual: mesAtual, proxMes: proxMes));
 

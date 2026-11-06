@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/functions/parcelas.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:gastos_gerais_app_flutter/utils/formtaterTexts.dart';
 
@@ -49,7 +51,7 @@ Future<void> editarItem(BuildContext context, CreateListCubit cubit, TipoLista t
 
   if (novo == null) return;
 
-  await cubit.editar(tipo, model.id, novo.titulo, novo.valor, recorrente: novo.recorrente);
+  await cubit.editar(tipo, model.id, novo.titulo, novo.valor, recorrente: novo.recorrente, parcelaAtual: novo.parcelaAtual, parcelasTotal: novo.parcelasTotal);
 }
 
 class _EditarItemDialog extends StatefulWidget {
@@ -65,6 +67,8 @@ class _EditarItemDialog extends StatefulWidget {
 class _EditarItemDialogState extends State<_EditarItemDialog> {
   late final TextEditingController _titulo;
   late final TextEditingController _valor;
+  late final TextEditingController _parcelaAtual;
+  late final TextEditingController _parcelasTotal;
   late bool _saida;
   late bool _recorrente;
   String? _erro;
@@ -76,12 +80,16 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
     _valor = TextEditingController(text: Formatervalor.paraCampo(widget.model.valor));
     _saida = widget.model.valor < 0;
     _recorrente = widget.model.recorrente;
+    _parcelaAtual = TextEditingController(text: widget.model.temParcelas ? '${widget.model.parcelaAtual}' : '');
+    _parcelasTotal = TextEditingController(text: widget.model.temParcelas ? '${widget.model.parcelasTotal}' : '');
   }
 
   @override
   void dispose() {
     _titulo.dispose();
     _valor.dispose();
+    _parcelaAtual.dispose();
+    _parcelasTotal.dispose();
     super.dispose();
   }
 
@@ -105,7 +113,14 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
       return;
     }
 
-    Navigator.of(context).pop(widget.model.copyWith(titulo: titulo, valor: valor, recorrente: widget.mostrarRecorrente && _recorrente));
+    final recorrente = widget.mostrarRecorrente && _recorrente;
+    final parcelas = recorrente ? lerParcelas(_parcelaAtual.text, _parcelasTotal.text) : const ParcelasLidas();
+    if (parcelas.erro != null) {
+      setState(() => _erro = parcelas.erro);
+      return;
+    }
+
+    Navigator.of(context).pop(widget.model.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total));
   }
 
   @override
@@ -145,6 +160,31 @@ class _EditarItemDialogState extends State<_EditarItemDialog> {
                 onChanged: (valor) => setState(() => _recorrente = valor ?? false),
                 title: const Text('Recorrente (volta todo mês)'),
               ),
+            if (widget.mostrarRecorrente && _recorrente) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _parcelaAtual,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(labelText: 'Parcela atual'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _parcelasTotal,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(labelText: 'Total de parcelas'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text('Sem total, repete todo mês sem fim.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
             if (_erro != null) ...[
               const SizedBox(height: 12),
               Text(_erro!, style: const TextStyle(fontSize: 14, color: Colors.red)),

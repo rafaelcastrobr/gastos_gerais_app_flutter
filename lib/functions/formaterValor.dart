@@ -72,6 +72,6 @@ class Formatervalor {
   static Color verificaSeENegativo(String valor) {
     bool valorDouble = valor.contains('-');
 
-    return valorDouble ? Colors.red : const Color.fromARGB(255, 9, 101, 177);
+    return valorDouble ? const Color(0xFFA32D2D) : const Color(0xFF185FA5);
   }
 }

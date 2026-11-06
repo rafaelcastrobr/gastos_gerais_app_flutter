@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/formaterValor.dart';
+import 'package:gastos_gerais_app_flutter/functions/parcelas.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
 import 'package:gastos_gerais_app_flutter/widgets/TextInputWidget.dart';
@@ -29,6 +31,8 @@ class _HomeState extends State<Home> {
   bool proxMesCheck = false;
   bool outrosCheck = false;
   bool recorrenteCheck = false;
+  final TextEditingController _controllerParcelaAtual = TextEditingController();
+  final TextEditingController _controllerParcelasTotal = TextEditingController();
 
   bool entradaCheck = false;
   bool saidaCheck = false;
@@ -62,9 +66,14 @@ class _HomeState extends State<Home> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    _controllerParcelaAtual.dispose();
+    _controllerParcelasTotal.dispose();
     super.dispose();
   }
+
+  bool get _recorrenteAtivo => recorrenteCheck && (mesAtualCheck || proxMesCheck);
+
+  ParcelasLidas _parcelas() => lerParcelas(_controllerParcelaAtual.text, _controllerParcelasTotal.text);
 
   bool validarEntrada() {
     var valorNumerico = Formatervalor.limparString(createListCubit.state.controllerValor!.text, entradaCheck, saidaCheck);
@@ -80,6 +89,9 @@ class _HomeState extends State<Home> {
       return false;
     } else if (!mesAtualCheck && !proxMesCheck && !outrosCheck) {
       valueNotifier.value = 'É preciso dizer para qual lista deve ir';
+      return false;
+    } else if (_recorrenteAtivo && _parcelas().erro != null) {
+      valueNotifier.value = _parcelas().erro!;
       return false;
     } else {
       return true;
@@ -203,6 +215,39 @@ class _HomeState extends State<Home> {
                           Text('RECORRENTE', style: GoogleFonts.lato(fontSize: 13)),
                         ]),
                       ]),
+                      if (_recorrenteAtivo) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 140,
+                                child: TextField(
+                                  controller: _controllerParcelaAtual,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  decoration: const InputDecoration(labelText: 'Parcela atual'),
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              SizedBox(
+                                width: 140,
+                                child: TextField(
+                                  controller: _controllerParcelasTotal,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  decoration: const InputDecoration(labelText: 'Total de parcelas'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Sem total, repete todo mês sem fim.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ),
+                      ],
                       if (error)
                         ValueListenableBuilder(
                           valueListenable: valueNotifier,
@@ -228,13 +273,14 @@ class _HomeState extends State<Home> {
                             var valorNumerico = Formatervalor.limparString(state.controllerValor!.text, entradaCheck, saidaCheck);
 
                             Guid id = Guid.generate();
+                            final parcelas = _recorrenteAtivo ? _parcelas() : const ParcelasLidas();
 
                             if (mesAtualCheck) {
-                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck);
+                              createListCubit.adicionar(TipoLista.mesAtual, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total);
                             }
 
                             if (proxMesCheck) {
-                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck);
+                              createListCubit.adicionar(TipoLista.proxMes, id.value, state.controllerTitulo!.text, valorNumerico, recorrente: recorrenteCheck, parcelaAtual: parcelas.atual, parcelasTotal: parcelas.total);
                             }
 
                             if (outrosCheck) {
@@ -243,6 +289,8 @@ class _HomeState extends State<Home> {
                             FocusScope.of(context).requestFocus(FocusNode());
                             state.controllerTitulo!.clear();
                             state.controllerValor!.clear();
+                            _controllerParcelaAtual.clear();
+                            _controllerParcelasTotal.clear();
                             setState(() {
                               entradaCheck = false;
                               saidaCheck = false;

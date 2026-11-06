@@ -13,11 +13,24 @@ class ListasModel extends Equatable {
   double valor;
   int iconEnum;
   bool recorrente;
+  int parcelaAtual;
+  int parcelasTotal;
 
-  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false});
+  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0});
+
+  bool get temParcelas => parcelasTotal > 0;
+
+  /// O item que entra no mês seguinte, ou null se não há mais o que repetir
+  /// (não é recorrente, ou esta era a última parcela).
+  ListasModel? proximoMes(String novoId) {
+    if (!recorrente) return null;
+    if (!temParcelas) return copyWith(id: novoId);
+    if (parcelaAtual >= parcelasTotal) return null;
+    return copyWith(id: novoId, parcelaAtual: parcelaAtual + 1);
+  }
 
   @override
-  List<Object> get props => [id, titulo, valor, iconEnum, recorrente];
+  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal];
 
   ListasModel copyWith({
     String? titulo,
@@ -25,6 +38,8 @@ class ListasModel extends Equatable {
     double? valor,
     int? iconEnum,
     bool? recorrente,
+    int? parcelaAtual,
+    int? parcelasTotal,
   }) {
     return ListasModel(
       id: id ?? this.id,
@@ -32,6 +47,8 @@ class ListasModel extends Equatable {
       valor: valor ?? this.valor,
       iconEnum: iconEnum ?? this.iconEnum,
       recorrente: recorrente ?? this.recorrente,
+      parcelaAtual: parcelaAtual ?? this.parcelaAtual,
+      parcelasTotal: parcelasTotal ?? this.parcelasTotal,
     );
   }
 
@@ -42,6 +59,8 @@ class ListasModel extends Equatable {
       'valor': valor,
       'iconEnum': iconEnum,
       'recorrente': recorrente,
+      'parcelaAtual': parcelaAtual,
+      'parcelasTotal': parcelasTotal,
     };
   }
 
@@ -52,6 +71,8 @@ class ListasModel extends Equatable {
       valor: map['valor'] ?? 0,
       iconEnum: map['iconEnum'] ?? 0,
       recorrente: map['recorrente'] == true,
+      parcelaAtual: map['parcelaAtual'] ?? 0,
+      parcelasTotal: map['parcelasTotal'] ?? 0,
     );
   }
 

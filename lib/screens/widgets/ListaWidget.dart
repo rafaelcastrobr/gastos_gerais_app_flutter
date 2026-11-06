@@ -18,6 +18,13 @@ class ListaWidget extends StatefulWidget {
 }
 
 class _ListaWidgetState extends State<ListaWidget> {
+  static const Color _corTexto = Color(0xFF2C2C2A);
+  static const Color _corTextoSecundario = Color(0xFF5F5E5A);
+  static const Color _corIconeMudo = Color(0xFF888780);
+  static const Color _corBorda = Color(0x1F000000);
+  static const Color _corSomaFundo = Color(0xFFFAEEDA);
+  static const Color _corSomaIcone = Color(0xFFBA7517);
+
   /// Itens marcados para a soma temporária. Guarda só os ids, então
   /// editar ou apagar um item não deixa a soma com valor velho.
   final Set<String> _somaIds = {};
@@ -97,54 +104,65 @@ class _ListaWidgetState extends State<ListaWidget> {
     final item = itens[index];
     final valor = Formatervalor.formaterForReal(item.valor);
     final marcado = _somaIds.contains(item.id);
+    final ultima = index == itens.length - 1;
 
-    return InkWell(
-      onTap: () => _alternarSoma(item.id),
-      child: Container(
-        decoration: BoxDecoration(
-          color: marcado ? Colors.orange.shade100 : null,
-          border: const Border(bottom: BorderSide(color: Colors.black12)),
-        ),
-        padding: const EdgeInsets.only(left: 8),
-        child: Row(
-          children: [
-            Icon(marcado ? Icons.check_circle : Icons.radio_button_unchecked, size: 22, color: marcado ? Colors.orange : Colors.grey),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      item.titulo.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.lato(fontSize: 16, color: Colors.black),
+    return Material(
+      color: marcado ? _corSomaFundo : Colors.white,
+      child: InkWell(
+        onTap: () => _alternarSoma(item.id),
+        child: Container(
+          decoration: BoxDecoration(
+            border: ultima ? null : const Border(bottom: BorderSide(color: _corBorda, width: 0.5)),
+          ),
+          padding: const EdgeInsets.only(left: 12),
+          child: Row(
+            children: [
+              Icon(
+                marcado ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+                size: 20,
+                color: marcado ? _corSomaIcone : _corIconeMudo,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.titulo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.lato(fontSize: 14, color: _corTexto),
+                      ),
                     ),
-                  ),
-                  if (item.recorrente) ...[
-                    const SizedBox(width: 4),
-                    const Icon(Icons.autorenew, size: 16, color: Colors.grey),
+                    if (item.temParcelas) ...[
+                      const SizedBox(width: 6),
+                      Text('${item.parcelaAtual}/${item.parcelasTotal}', style: GoogleFonts.lato(fontSize: 12, color: _corIconeMudo)),
+                    ],
+                    if (item.recorrente) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.autorenew, size: 14, color: _corIconeMudo),
+                    ],
                   ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(valor, maxLines: 1, style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.w500, color: Formatervalor.verificaSeENegativo(valor))),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 20, color: _corTextoSecundario),
+                tooltip: 'Ações',
+                onSelected: (acao) {
+                  if (acao == 'editar') editarItem(context, cubit, widget.tipo, item);
+                  if (acao == 'copiar') _copiarParaFormulario(cubit, item);
+                  if (acao == 'apagar') confirmarApagar(context, cubit, widget.tipo, item, index);
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
+                  PopupMenuItem<String>(value: 'copiar', child: Row(children: [Icon(Icons.copy, color: Colors.blue), SizedBox(width: 12), Text('Copiar')])),
+                  PopupMenuItem<String>(value: 'apagar', child: Row(children: [Icon(Icons.delete, color: Colors.red), SizedBox(width: 12), Text('Apagar')])),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(valor, maxLines: 1, style: GoogleFonts.lato(fontSize: 16, color: Formatervalor.verificaSeENegativo(valor))),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              tooltip: 'Ações',
-              onSelected: (acao) {
-                if (acao == 'editar') editarItem(context, cubit, widget.tipo, item);
-                if (acao == 'copiar') _copiarParaFormulario(cubit, item);
-                if (acao == 'apagar') confirmarApagar(context, cubit, widget.tipo, item, index);
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
-                PopupMenuItem<String>(value: 'copiar', child: Row(children: [Icon(Icons.copy, color: Colors.blue), SizedBox(width: 12), Text('Copiar')])),
-                PopupMenuItem<String>(value: 'apagar', child: Row(children: [Icon(Icons.delete, color: Colors.red), SizedBox(width: 12), Text('Apagar')])),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -194,12 +212,22 @@ class _ListaWidgetState extends State<ListaWidget> {
                 ],
               ),
             const SizedBox(height: 12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: itens.length,
-              itemBuilder: (context, index) => _linha(context, cubit, itens, index),
-            ),
+            if (itens.isNotEmpty)
+              Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _corBorda, width: 0.5),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: itens.length,
+                  itemBuilder: (context, index) => _linha(context, cubit, itens, index),
+                ),
+              ),
           ],
         );
       },
