@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_rotulo">Saldo do mês</string>
+    <string name="widget_descricao">Saldo do Mês Atual do Gastos Gerais</string>
+    <string name="widget_sem_dados">Abra o app</string>
+</resources>

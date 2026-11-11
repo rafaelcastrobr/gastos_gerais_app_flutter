@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/atualizacao.dart';
 import 'package:gastos_gerais_app_flutter/functions/filtro.dart';
 import 'package:gastos_gerais_app_flutter/functions/lembrete_backup.dart';
+import 'package:gastos_gerais_app_flutter/functions/widget_saldo.dart';
 import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
@@ -42,17 +45,40 @@ class _HomeState extends State<Home> {
   /// "Depois" esconde o aviso só até fechar o app.
   NovaVersao? _novaVersao;
 
+  /// Mantém o widget da tela inicial em dia: escuta o estado e guarda o último saldo enviado.
+  StreamSubscription<CreateListState>? _assinaturaWidget;
+  String _ultimoWidget = '';
+
   /// O "olho": esconde saldo, totais e valores dos itens. Fica salvo para a próxima abertura.
   bool _ocultar = false;
 
   @override
   void initState() {
     createListCubit = context.read<CreateListCubit>();
+    _assinaturaWidget = createListCubit.stream.listen((_) => _atualizarWidget());
     listShared();
     _carregarLembrete();
     _carregarOcultar();
     _verificarAtualizacao();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _assinaturaWidget?.cancel();
+    super.dispose();
+  }
+
+  /// Manda o saldo do Mês Atual (e o estado do olho) para o widget, só quando mudou.
+  void _atualizarWidget() {
+    final itens = createListCubit.state.mesAtual;
+    if (itens == null) return;
+
+    final saldo = (itens.fold(0.0, (soma, e) => soma + e.valor) * 100).round() / 100;
+    final chave = '$saldo|$_ocultar';
+    if (chave == _ultimoWidget) return;
+    _ultimoWidget = chave;
+    WidgetSaldo.atualizar(saldo: saldo, ocultar: _ocultar);
   }
 
   Future<void> _verificarAtualizacao() async {
@@ -71,10 +97,12 @@ class _HomeState extends State<Home> {
     final ocultar = prefs.getBool('ocultarValores') ?? false;
     if (!mounted) return;
     setState(() => _ocultar = ocultar);
+    _atualizarWidget();
   }
 
   Future<void> _alternarOcultar() async {
     setState(() => _ocultar = !_ocultar);
+    _atualizarWidget();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('ocultarValores', _ocultar);
   }

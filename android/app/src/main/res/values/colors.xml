@@ -3,4 +3,9 @@
     <!-- Cores da tela de abertura (splash) no modo claro; iguais às do app -->
     <color name="splash_fundo">#FFFBE9E7</color>
     <color name="splash_icone">#FF2C2C2A</color>
+    <!-- Widget do saldo -->
+    <color name="widget_fundo">#FFFBE9E7</color>
+    <color name="widget_rotulo">#FF5F5E5A</color>
+    <color name="widget_positivo">#FF185FA5</color>
+    <color name="widget_negativo">#FFA32D2D</color>
 </resources>
