@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Para o app conferir se há versão nova nas Releases do GitHub -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Gastos Gerais"
         android:name="${applicationName}"

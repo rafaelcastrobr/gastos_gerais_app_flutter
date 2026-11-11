@@ -4,6 +4,10 @@ name: Build APK (CI)
 on:
   workflow_dispatch:
 
+# Precisa para criar a Release com o APK
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -77,3 +81,16 @@ jobs:
         with:
           name: gastos-gerais-ci-apk
           path: gastos-gerais-ci.apk
+
+      # Publica o APK numa Release (tag build-N). É daqui que o app confere se há versão nova
+      - name: Publicar Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSAO=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
+          gh release create "build-${{ github.run_number }}" gastos-gerais-ci.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Build ${{ github.run_number }} (versão $VERSAO)" \
+            --notes "APK de teste do Gastos Gerais CI. Instale por cima da versão anterior." \
+            --latest

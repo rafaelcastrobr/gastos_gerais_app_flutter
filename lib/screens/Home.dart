@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
+import 'package:gastos_gerais_app_flutter/functions/atualizacao.dart';
 import 'package:gastos_gerais_app_flutter/functions/filtro.dart';
 import 'package:gastos_gerais_app_flutter/functions/lembrete_backup.dart';
 import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/BackupMenu.dart';
 import 'package:gastos_gerais_app_flutter/screens/widgets/ListaWidget.dart';
 import 'package:gastos_gerais_app_flutter/utils/cores.dart';
+import 'package:gastos_gerais_app_flutter/widgets/AtualizacaoCard.dart';
 import 'package:gastos_gerais_app_flutter/widgets/FiltroCategorias.dart';
 import 'package:gastos_gerais_app_flutter/widgets/FormularioItem.dart';
 import 'package:gastos_gerais_app_flutter/widgets/LembreteBackupCard.dart';
 import 'package:gastos_gerais_app_flutter/widgets/ResumoMes.dart';
 import 'package:gastos_gerais_app_flutter/widgets/VersionWidget.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -34,6 +38,10 @@ class _HomeState extends State<Home> {
   int _intervaloLembrete = LembreteBackup.padraoDias;
   bool _lembreteDispensado = false;
 
+  /// Versão mais nova publicada no GitHub (null = app atualizado ou sem internet).
+  /// "Depois" esconde o aviso só até fechar o app.
+  NovaVersao? _novaVersao;
+
   /// O "olho": esconde saldo, totais e valores dos itens. Fica salvo para a próxima abertura.
   bool _ocultar = false;
 
@@ -43,7 +51,19 @@ class _HomeState extends State<Home> {
     listShared();
     _carregarLembrete();
     _carregarOcultar();
+    _verificarAtualizacao();
     super.initState();
+  }
+
+  Future<void> _verificarAtualizacao() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final nova = await Atualizacao.buscar(int.tryParse(info.buildNumber) ?? 0);
+      if (nova == null || !mounted) return;
+      setState(() => _novaVersao = nova);
+    } catch (_) {
+      // não conseguiu conferir: segue sem o aviso
+    }
   }
 
   Future<void> _carregarOcultar() async {
@@ -159,6 +179,14 @@ class _HomeState extends State<Home> {
                       Text('Gastos Gerais', style: GoogleFonts.lato(fontSize: 20)),
                       const VersionWidget(),
                       const SizedBox(height: 12),
+                      if (_novaVersao != null) ...[
+                        AtualizacaoCard(
+                          numeroBuild: _novaVersao!.build,
+                          onAtualizar: () => launchUrl(Uri.parse(_novaVersao!.url), mode: LaunchMode.externalApplication),
+                          onDepois: () => setState(() => _novaVersao = null),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       if (_diasSemBackup >= _intervaloLembrete && !_lembreteDispensado && _temDados(state)) ...[
                         LembreteBackupCard(
                           dias: _diasSemBackup,
