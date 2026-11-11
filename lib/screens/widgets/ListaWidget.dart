@@ -109,7 +109,7 @@ class _ListaWidgetState extends State<ListaWidget> {
     final icone = categoria?.icone ?? '';
     final nomeEmbaixo = item.categoria.isNotEmpty && icone.isEmpty;
 
-    return Material(
+    final linha = Material(
       color: marcado ? cores.somaFundo : (item.destaque ? cores.destaqueFundo : cores.cartao),
       child: InkWell(
         onTap: () => _alternarSoma(item.id),
@@ -197,6 +197,29 @@ class _ListaWidgetState extends State<ListaWidget> {
           ),
         ),
       ),
+    );
+
+    // Deslizar para o lado apaga (a conta foi paga). Sem pergunta: o aviso tem "Desfazer".
+    Widget fundoApagar(Alignment alinhamento) {
+      return Container(
+        color: cores.negativo,
+        alignment: alinhamento,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      );
+    }
+
+    return Dismissible(
+      key: ValueKey(item.id),
+      direction: DismissDirection.horizontal,
+      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+      background: fundoApagar(Alignment.centerLeft),
+      secondaryBackground: fundoApagar(Alignment.centerRight),
+      onDismissed: (_) {
+        final indice = todos.indexWhere((e) => e.id == item.id);
+        apagarComDesfazer(ScaffoldMessenger.of(context), cubit, widget.tipo, item, indice);
+      },
+      child: linha,
     );
   }
 

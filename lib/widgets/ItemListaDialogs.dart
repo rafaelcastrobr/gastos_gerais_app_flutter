@@ -29,6 +29,12 @@ Future<void> confirmarApagar(BuildContext context, CreateListCubit cubit, TipoLi
 
   if (confirmou != true) return;
 
+  await apagarComDesfazer(messenger, cubit, tipo, model, indice);
+}
+
+/// Apaga o item e mostra o aviso com "Desfazer", que devolve o item ao mesmo lugar.
+/// Usado pelo menu (depois de confirmar) e pelo deslizar da linha (sem confirmar).
+Future<void> apagarComDesfazer(ScaffoldMessengerState messenger, CreateListCubit cubit, TipoLista tipo, ListasModel model, int indice) async {
   await cubit.remover(tipo, model.id);
 
   messenger
