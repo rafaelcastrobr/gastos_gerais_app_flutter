@@ -86,7 +86,7 @@ class Backup {
 
       itens.add(ListasModel(id: id, titulo: titulo, valor: valor.toDouble(), iconEnum: icone is int ? icone : 0, recorrente: item['recorrente'] == true,
           parcelaAtual: item['parcelaAtual'] is int ? item['parcelaAtual'] : 0, parcelasTotal: item['parcelasTotal'] is int ? item['parcelasTotal'] : 0,
-          categoria: item['categoria'] is String ? item['categoria'] : ''));
+          categoria: item['categoria'] is String ? item['categoria'] : '', destaque: item['destaque'] == true));
     }
     return itens;
   }

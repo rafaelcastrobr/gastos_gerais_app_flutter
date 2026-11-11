@@ -124,6 +124,12 @@ class CreateListCubit extends Cubit<CreateListState> {
     return _atualizar(TipoLista.proxMes, [copia, ...prox]);
   }
 
+  /// Destaca o item (vai para o topo da lista) ou tira o destaque.
+  Future<void> alternarDestaque(TipoLista tipo, String id) {
+    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(destaque: !e.destaque) : e).toList();
+    return _atualizar(tipo, lista);
+  }
+
   Future<void> remover(TipoLista tipo, String id) {
     final lista = _lista(tipo)..removeWhere((e) => e.id == id);
     return _atualizar(tipo, lista);

@@ -21,6 +21,8 @@ class AppCores {
   Color get negativo => escuro ? const Color(0xFFE47D7D) : const Color(0xFFA32D2D);
   Color get somaFundo => escuro ? const Color(0xFF341C00) : const Color(0xFFFAEEDA);
   Color get somaIcone => escuro ? const Color(0xFFE69A1F) : const Color(0xFFBA7517);
+  Color get destaque => escuro ? const Color(0xFFAFA9EC) : const Color(0xFF534AB7);
+  Color get destaqueFundo => escuro ? const Color(0xFF26215C) : const Color(0xFFEEEDFE);
   Color get botao => escuro ? const Color(0xFFECEAE3) : Colors.black;
   Color get botaoTexto => escuro ? const Color(0xFF121212) : Colors.white;
 

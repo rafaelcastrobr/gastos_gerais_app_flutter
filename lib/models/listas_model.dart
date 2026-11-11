@@ -17,7 +17,10 @@ class ListasModel extends Equatable {
   int parcelasTotal;
   String categoria;
 
-  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0, this.categoria = ''});
+  /// Item destacado: aparece no topo da lista, com a marca de destaque.
+  bool destaque;
+
+  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0, this.categoria = '', this.destaque = false});
 
   bool get temParcelas => parcelasTotal > 0;
 
@@ -31,7 +34,7 @@ class ListasModel extends Equatable {
   }
 
   @override
-  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal, categoria];
+  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal, categoria, destaque];
 
   ListasModel copyWith({
     String? titulo,
@@ -42,6 +45,7 @@ class ListasModel extends Equatable {
     int? parcelaAtual,
     int? parcelasTotal,
     String? categoria,
+    bool? destaque,
   }) {
     return ListasModel(
       id: id ?? this.id,
@@ -52,6 +56,7 @@ class ListasModel extends Equatable {
       parcelaAtual: parcelaAtual ?? this.parcelaAtual,
       parcelasTotal: parcelasTotal ?? this.parcelasTotal,
       categoria: categoria ?? this.categoria,
+      destaque: destaque ?? this.destaque,
     );
   }
 
@@ -65,6 +70,7 @@ class ListasModel extends Equatable {
       'parcelaAtual': parcelaAtual,
       'parcelasTotal': parcelasTotal,
       'categoria': categoria,
+      'destaque': destaque,
     };
   }
 
@@ -78,6 +84,7 @@ class ListasModel extends Equatable {
       parcelaAtual: map['parcelaAtual'] ?? 0,
       parcelasTotal: map['parcelasTotal'] ?? 0,
       categoria: map['categoria'] ?? '',
+      destaque: map['destaque'] == true,
     );
   }
 

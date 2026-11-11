@@ -110,14 +110,18 @@ class _ListaWidgetState extends State<ListaWidget> {
     final nomeEmbaixo = item.categoria.isNotEmpty && icone.isEmpty;
 
     return Material(
-      color: marcado ? cores.somaFundo : cores.cartao,
+      color: marcado ? cores.somaFundo : (item.destaque ? cores.destaqueFundo : cores.cartao),
       child: InkWell(
         onTap: () => _alternarSoma(item.id),
         child: Container(
           decoration: BoxDecoration(
-            border: ultima ? null : Border(bottom: BorderSide(color: cores.borda, width: 0.5)),
+            // faixa colorida na esquerda só nos destacados (nos outros fica transparente, para alinhar)
+            border: Border(
+              left: BorderSide(color: item.destaque ? cores.destaque : Colors.transparent, width: 4),
+              bottom: ultima ? BorderSide.none : BorderSide(color: cores.borda, width: 0.5),
+            ),
           ),
-          padding: const EdgeInsets.only(left: 12),
+          padding: const EdgeInsets.only(left: 8),
           child: Row(
             children: [
               Icon(
@@ -133,6 +137,10 @@ class _ListaWidgetState extends State<ListaWidget> {
                   children: [
                     Row(
                       children: [
+                        if (item.destaque) ...[
+                          Icon(Icons.star_rounded, size: 16, color: cores.destaque),
+                          const SizedBox(width: 4),
+                        ],
                         if (icone.isNotEmpty) ...[
                           Text(icone, style: const TextStyle(fontSize: 16)),
                           const SizedBox(width: 6),
@@ -166,14 +174,23 @@ class _ListaWidgetState extends State<ListaWidget> {
                 icon: Icon(Icons.more_vert, size: 20, color: cores.textoSecundario),
                 tooltip: 'Ações',
                 onSelected: (acao) {
+                  if (acao == 'destacar') cubit.alternarDestaque(widget.tipo, item.id);
                   if (acao == 'editar') editarItem(context, cubit, widget.tipo, item);
                   if (acao == 'copiar') widget.aoCopiar(item);
                   if (acao == 'apagar') confirmarApagar(context, cubit, widget.tipo, item, todos.indexWhere((e) => e.id == item.id));
                 },
-                itemBuilder: (_) => const [
-                  PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
-                  PopupMenuItem<String>(value: 'copiar', child: Row(children: [Icon(Icons.copy, color: Colors.blue), SizedBox(width: 12), Text('Copiar')])),
-                  PopupMenuItem<String>(value: 'apagar', child: Row(children: [Icon(Icons.delete, color: Colors.red), SizedBox(width: 12), Text('Apagar')])),
+                itemBuilder: (_) => [
+                  PopupMenuItem<String>(
+                    value: 'destacar',
+                    child: Row(children: [
+                      Icon(item.destaque ? Icons.star_border_rounded : Icons.star_rounded, color: Colors.amber),
+                      const SizedBox(width: 12),
+                      Text(item.destaque ? 'Tirar destaque' : 'Destacar'),
+                    ]),
+                  ),
+                  const PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
+                  const PopupMenuItem<String>(value: 'copiar', child: Row(children: [Icon(Icons.copy, color: Colors.blue), SizedBox(width: 12), Text('Copiar')])),
+                  const PopupMenuItem<String>(value: 'apagar', child: Row(children: [Icon(Icons.delete, color: Colors.red), SizedBox(width: 12), Text('Apagar')])),
                 ],
               ),
             ],
@@ -193,7 +210,7 @@ class _ListaWidgetState extends State<ListaWidget> {
         final cores = AppCores.of(context);
         final todos = _itens(state);
         final filtroAtivo = widget.filtro.isNotEmpty;
-        final itens = aplicarFiltro(todos, widget.filtro);
+        final itens = destaquesNoTopo(aplicarFiltro(todos, widget.filtro));
         final categorias = state.categorias ?? const <Categoria>[];
         final itensSoma = itens.where((e) => _somaIds.contains(e.id)).toList();
 
