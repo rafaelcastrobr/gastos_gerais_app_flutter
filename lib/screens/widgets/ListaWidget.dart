@@ -188,7 +188,8 @@ class _ListaWidgetState extends State<ListaWidget> {
                       Text(item.destaque ? 'Tirar destaque' : 'Destacar'),
                     ]),
                   ),
-                  const PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
+                  // o 💣 do saldo negativo tem o valor calculado pelo app, então não é editado à mão
+                  if (!item.auto) const PopupMenuItem<String>(value: 'editar', child: Row(children: [Icon(Icons.edit, color: Colors.green), SizedBox(width: 12), Text('Editar')])),
                   const PopupMenuItem<String>(value: 'copiar', child: Row(children: [Icon(Icons.copy, color: Colors.blue), SizedBox(width: 12), Text('Copiar')])),
                   const PopupMenuItem<String>(value: 'apagar', child: Row(children: [Icon(Icons.delete, color: Colors.red), SizedBox(width: 12), Text('Apagar')])),
                 ],

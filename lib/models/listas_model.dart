@@ -20,7 +20,11 @@ class ListasModel extends Equatable {
   /// Item destacado: aparece no topo da lista, com a marca de destaque.
   bool destaque;
 
-  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0, this.categoria = '', this.destaque = false});
+  /// Item que o app cria e mantém sozinho (o 💣 do saldo negativo).
+  /// O valor dele vem do saldo do Mês Atual, então não é editado à mão.
+  bool auto;
+
+  ListasModel({required this.id, required this.titulo, required this.valor, this.iconEnum = 0, this.recorrente = false, this.parcelaAtual = 0, this.parcelasTotal = 0, this.categoria = '', this.destaque = false, this.auto = false});
 
   bool get temParcelas => parcelasTotal > 0;
 
@@ -34,7 +38,7 @@ class ListasModel extends Equatable {
   }
 
   @override
-  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal, categoria, destaque];
+  List<Object> get props => [id, titulo, valor, iconEnum, recorrente, parcelaAtual, parcelasTotal, categoria, destaque, auto];
 
   ListasModel copyWith({
     String? titulo,
@@ -46,6 +50,7 @@ class ListasModel extends Equatable {
     int? parcelasTotal,
     String? categoria,
     bool? destaque,
+    bool? auto,
   }) {
     return ListasModel(
       id: id ?? this.id,
@@ -57,6 +62,7 @@ class ListasModel extends Equatable {
       parcelasTotal: parcelasTotal ?? this.parcelasTotal,
       categoria: categoria ?? this.categoria,
       destaque: destaque ?? this.destaque,
+      auto: auto ?? this.auto,
     );
   }
 
@@ -71,6 +77,7 @@ class ListasModel extends Equatable {
       'parcelasTotal': parcelasTotal,
       'categoria': categoria,
       'destaque': destaque,
+      'auto': auto,
     };
   }
 
@@ -85,6 +92,7 @@ class ListasModel extends Equatable {
       parcelasTotal: map['parcelasTotal'] ?? 0,
       categoria: map['categoria'] ?? '',
       destaque: map['destaque'] == true,
+      auto: map['auto'] == true,
     );
   }
 

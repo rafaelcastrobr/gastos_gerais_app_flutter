@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gastos_gerais_app_flutter/bloc/create_list_cubit/create_list_cubit.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
 import 'package:gastos_gerais_app_flutter/functions/lembrete_backup.dart';
+import 'package:gastos_gerais_app_flutter/functions/saldo_negativo.dart';
 import 'package:gastos_gerais_app_flutter/screens/CategoriasScreen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -148,6 +149,21 @@ class BackupMenu extends StatelessWidget {
     messenger.showSnackBar(const SnackBar(content: Text('Backup restaurado.')));
   }
 
+  /// Liga/desliga passar o saldo negativo do Mês Atual para o Próx. Mês (o 💣).
+  Future<void> _ajustarSaldoNegativo(BuildContext context) async {
+    final cubit = context.read<CreateListCubit>();
+    final atual = await SaldoNegativo.ativo();
+    if (!context.mounted) return;
+
+    final novo = await showDialog<bool>(
+      context: context,
+      builder: (_) => _SaldoNegativoDialog(ativo: atual),
+    );
+    if (novo == null || novo == atual) return;
+
+    await cubit.definirPassarSaldoNegativo(novo);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
@@ -160,9 +176,11 @@ class BackupMenu extends StatelessWidget {
         if (acao == 'arquivo') _restaurarDeArquivo(context);
         if (acao == 'colar') _restaurarColando(context);
         if (acao == 'lembrete') _ajustarLembrete(context);
+        if (acao == 'saldoNegativo') _ajustarSaldoNegativo(context);
       },
       itemBuilder: (_) => const [
         PopupMenuItem<String>(value: 'categorias', child: Text('Categorias')),
+        PopupMenuItem<String>(value: 'saldoNegativo', child: Text('Saldo negativo no Próx. Mês')),
         PopupMenuDivider(),
         PopupMenuItem<String>(value: 'salvar', child: Text('Salvar backup (Drive...)')),
         PopupMenuItem<String>(value: 'copiar', child: Text('Copiar backup (texto)')),
@@ -281,6 +299,54 @@ class _ColarBackupDialogState extends State<_ColarBackupDialog> {
       actions: <Widget>[
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
         TextButton(onPressed: _restaurar, child: const Text('Restaurar')),
+      ],
+    );
+  }
+}
+
+/// Liga ou desliga a opção de passar o saldo negativo do Mês Atual para o Próx. Mês.
+class _SaldoNegativoDialog extends StatefulWidget {
+  final bool ativo;
+
+  const _SaldoNegativoDialog({required this.ativo});
+
+  @override
+  State<_SaldoNegativoDialog> createState() => _SaldoNegativoDialogState();
+}
+
+class _SaldoNegativoDialogState extends State<_SaldoNegativoDialog> {
+  late bool _ativo = widget.ativo;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Saldo negativo no Próx. Mês'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _ativo,
+              title: const Text('Criar o 💣 sozinho'),
+              onChanged: (valor) => setState(() => _ativo = valor),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Quando o Mês Atual fica negativo, o app cria no Próx. Mês o item '
+              '"💣 Saldo do mês anterior" com esse valor e mantém ele em dia a cada '
+              'mudança do Mês Atual. Se o Mês Atual voltar para o azul, o item sai.\n\n'
+              'Apagar o item não desliga a opção: ele volta na próxima mudança do '
+              'Mês Atual. Desligando aqui, o item sai e não é criado de novo.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.of(context).pop(_ativo), child: const Text('Salvar')),
       ],
     );
   }

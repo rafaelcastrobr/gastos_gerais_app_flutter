@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'package:gastos_gerais_app_flutter/functions/backup.dart';
+import 'package:gastos_gerais_app_flutter/functions/saldo_negativo.dart';
 import 'package:gastos_gerais_app_flutter/models/categoria_model.dart';
 import 'package:gastos_gerais_app_flutter/models/listas_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -88,6 +89,9 @@ class CreateListCubit extends Cubit<CreateListState> {
     }
 
     emit(CreateListState(mesAtual: mesAtualConvert, proxMes: proxMesConvert, outros: outrosConvert, categorias: categoriasConvert, controllerTitulo: state.controllerTitulo, controllerValor: state.controllerValor));
+
+    // ao abrir o app só deixa o 💣 em dia; não cria de novo o que foi apagado
+    await sincronizarSaldoNegativo(criarSeFaltar: false);
   }
 
   // ------------------------------------------------------ itens de uma lista
@@ -97,6 +101,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     await _atualizar(tipo, [item, ..._lista(tipo)]);
 
     if (recorrente && tipo == TipoLista.mesAtual) await _garantirNoProxMes(item);
+    if (tipo == TipoLista.mesAtual) await sincronizarSaldoNegativo();
   }
 
   /// Edita o item no lugar, mantendo a posição e o id.
@@ -107,6 +112,7 @@ class CreateListCubit extends Cubit<CreateListState> {
     if (recorrente && tipo == TipoLista.mesAtual) {
       await _garantirNoProxMes(lista.firstWhere((e) => e.id == id));
     }
+    if (tipo == TipoLista.mesAtual) await sincronizarSaldoNegativo();
   }
 
   /// Um item recorrente do mês atual também precisa estar no próximo mês.
@@ -130,27 +136,33 @@ class CreateListCubit extends Cubit<CreateListState> {
     return _atualizar(tipo, lista);
   }
 
-  Future<void> remover(TipoLista tipo, String id) {
+  Future<void> remover(TipoLista tipo, String id) async {
     final lista = _lista(tipo)..removeWhere((e) => e.id == id);
-    return _atualizar(tipo, lista);
+    await _atualizar(tipo, lista);
+
+    if (tipo == TipoLista.mesAtual) await sincronizarSaldoNegativo();
   }
 
   /// Desfaz um `remover`: devolve o item para a posição em que estava.
-  Future<void> restaurar(TipoLista tipo, ListasModel item, int indice) {
+  Future<void> restaurar(TipoLista tipo, ListasModel item, int indice) async {
     final lista = _lista(tipo);
-    if (lista.any((e) => e.id == item.id)) return Future.value();
+    if (lista.any((e) => e.id == item.id)) return;
 
     final posicao = indice < 0 ? 0 : (indice > lista.length ? lista.length : indice);
     lista.insert(posicao, item);
-    return _atualizar(tipo, lista);
+    await _atualizar(tipo, lista);
+
+    if (tipo == TipoLista.mesAtual) await sincronizarSaldoNegativo();
   }
 
   /// Passa tudo do próximo mês para o mês atual.
   /// Os itens recorrentes continuam no próximo mês, como uma cópia nova
   /// (com a parcela seguinte, até chegar na última).
+  /// O 💣 que vem do Próx. Mês passa a ser um item comum do Mês Atual
+  /// (a dívida agora é deste mês), e um 💣 novo é calculado para o Próx. Mês.
   Future<void> sendMesAtual() async {
     final prox = [...?state.proxMes];
-    final mesAtual = [...?state.mesAtual, ...prox];
+    final mesAtual = [...?state.mesAtual, ...prox.map((e) => e.auto ? e.copyWith(auto: false) : e)];
     final proxMes = <ListasModel>[];
     for (final e in prox) {
       final proximo = e.proximoMes(Guid.generate().value);
@@ -161,9 +173,68 @@ class CreateListCubit extends Cubit<CreateListState> {
 
     await _salvar(TipoLista.mesAtual, mesAtual);
     await _salvar(TipoLista.proxMes, proxMes);
+
+    await sincronizarSaldoNegativo();
   }
 
-  // ----------------------------------------------------------------- backup
+  // ------------------------------------------------- saldo negativo (💣)
+
+  /// Liga ou desliga a opção. Ligando, o 💣 é criado na hora, se o Mês Atual
+  /// estiver negativo. Desligando, o 💣 sai do Próx. Mês.
+  Future<void> definirPassarSaldoNegativo(bool ativo) async {
+    await SaldoNegativo.definir(ativo);
+
+    if (ativo) return sincronizarSaldoNegativo();
+
+    final prox = _lista(TipoLista.proxMes);
+    if (!prox.any((e) => e.auto)) return;
+    return _atualizar(TipoLista.proxMes, prox.where((e) => !e.auto).toList());
+  }
+
+  /// Deixa o 💣 do Próx. Mês igual ao saldo negativo do Mês Atual: cria, atualiza
+  /// o valor ou tira o item, conforme o saldo. Com a opção desligada, não faz nada.
+  ///
+  /// Com [criarSeFaltar] false só atualiza o 💣 que já existe — é assim que o
+  /// item apagado fica apagado, até a próxima mudança do Mês Atual.
+  Future<void> sincronizarSaldoNegativo({bool criarSeFaltar = true}) async {
+    if (!await SaldoNegativo.ativo()) return;
+
+    // arredonda para não criar um 💣 de centavos por sobra de casas decimais
+    final saldo = ((state.mesAtual ?? []).fold(0.0, (soma, e) => soma + e.valor) * 100).round() / 100;
+
+    final prox = _lista(TipoLista.proxMes);
+    final automaticos = prox.where((e) => e.auto).toList();
+
+    // Mês Atual no azul: não há negativo para passar
+    if (saldo >= 0) {
+      if (automaticos.isEmpty) return;
+      return _atualizar(TipoLista.proxMes, prox.where((e) => !e.auto).toList());
+    }
+
+    if (automaticos.isEmpty) {
+      if (!criarSeFaltar) return;
+      final item = ListasModel(id: SaldoNegativo.idItem, titulo: SaldoNegativo.titulo, valor: saldo, auto: true);
+      return _atualizar(TipoLista.proxMes, [item, ...prox]);
+    }
+
+    // mantém o primeiro 💣 no lugar dele, com o valor novo, e tira os repetidos
+    var primeiro = true;
+    final lista = <ListasModel>[];
+    for (final e in prox) {
+      if (!e.auto) {
+        lista.add(e);
+      } else if (primeiro) {
+        primeiro = false;
+        lista.add(e.copyWith(titulo: SaldoNegativo.titulo, valor: saldo));
+      }
+    }
+
+    final atual = automaticos.first;
+    final semMudanca = automaticos.length == 1 && atual.valor == saldo && atual.titulo == SaldoNegativo.titulo;
+    if (semMudanca) return;
+
+    return _atualizar(TipoLista.proxMes, lista);
+  }
 
   // -------------------------------------------------------------- categorias
 
@@ -254,5 +325,8 @@ class CreateListCubit extends Cubit<CreateListState> {
     await _salvar(TipoLista.proxMes, dados.proxMes);
     await _salvar(TipoLista.outros, dados.outros);
     await _salvarCategorias(categorias);
+
+    // o backup manda nos itens; aqui só deixa o 💣 que veio nele em dia
+    await sincronizarSaldoNegativo(criarSeFaltar: false);
   }
 }
