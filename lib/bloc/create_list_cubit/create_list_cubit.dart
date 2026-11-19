@@ -106,13 +106,48 @@ class CreateListCubit extends Cubit<CreateListState> {
 
   /// Edita o item no lugar, mantendo a posição e o id.
   Future<void> editar(TipoLista tipo, String id, String titulo, double valor, {bool recorrente = false, int parcelaAtual = 0, int parcelasTotal = 0, String categoria = ''}) async {
-    final lista = _lista(tipo).map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal, categoria: categoria) : e).toList();
+    final antes = _lista(tipo);
+    final antigos = antes.where((e) => e.id == id).toList();
+    final lista = antes.map((e) => e.id == id ? e.copyWith(titulo: titulo, valor: valor, recorrente: recorrente, parcelaAtual: parcelaAtual, parcelasTotal: parcelasTotal, categoria: categoria) : e).toList();
     await _atualizar(tipo, lista);
 
-    if (recorrente && tipo == TipoLista.mesAtual) {
-      await _garantirNoProxMes(lista.firstWhere((e) => e.id == id));
+    if (tipo == TipoLista.mesAtual) {
+      final editado = lista.where((e) => e.id == id).toList();
+      if (editado.isNotEmpty) await _atualizarNoProxMes(antigos.isEmpty ? null : antigos.first, editado.first);
+      await sincronizarSaldoNegativo();
     }
-    if (tipo == TipoLista.mesAtual) await sincronizarSaldoNegativo();
+  }
+
+  String _chaveTitulo(String titulo) => titulo.trim().toLowerCase();
+
+  /// Depois de editar um item do Mês Atual, deixa o Próx. Mês de acordo com ele.
+  /// A cópia recorrente é achada pelo título de antes da edição (ou pelo novo):
+  /// - já existe: recebe os dados novos (título, valor, categoria, parcelas),
+  ///   mantendo o id, a posição e o destaque que ela tinha;
+  /// - não existe e o item é recorrente: a cópia é criada;
+  /// - o item deixou de repetir (desmarcou "Recorrente" ou chegou na última
+  ///   parcela): a cópia sai do Próx. Mês.
+  Future<void> _atualizarNoProxMes(ListasModel? antigo, ListasModel editado) {
+    final prox = _lista(TipoLista.proxMes);
+
+    bool copiaDe(ListasModel e, String titulo) => !e.auto && e.recorrente && _chaveTitulo(e.titulo) == _chaveTitulo(titulo);
+
+    var indice = antigo == null ? -1 : prox.indexWhere((e) => copiaDe(e, antigo.titulo));
+    if (indice < 0) indice = prox.indexWhere((e) => copiaDe(e, editado.titulo));
+
+    final copia = editado.proximoMes(indice >= 0 ? prox[indice].id : Guid.generate().value);
+
+    if (indice < 0) {
+      if (copia == null) return Future.value();
+      return _atualizar(TipoLista.proxMes, [copia, ...prox]);
+    }
+
+    if (copia == null) {
+      prox.removeAt(indice);
+    } else {
+      prox[indice] = copia.copyWith(destaque: prox[indice].destaque);
+    }
+    return _atualizar(TipoLista.proxMes, prox);
   }
 
   /// Um item recorrente do mês atual também precisa estar no próximo mês.
